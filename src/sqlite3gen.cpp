@@ -73,7 +73,8 @@ const char * table_schema[][2] = {
   { "files",
     "CREATE TABLE IF NOT EXISTS files (\n"
       "\t-- Names of source files and includes.\n"
-      "\tname         TEXT PRIMARY KEY NOT NULL\n"
+      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tname         TEXT NOT NULL\n"
       ");"
   },
   { "refids",
