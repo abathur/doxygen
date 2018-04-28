@@ -46,6 +46,11 @@
 #define DBG_CTX(x) do { } while(0)
 
 const char * schema_queries[][2] = {
+// used by sqlite3_trace in generateSqlite3()
+static void sqlLog(void *dbName, const char *sql){
+  msg("SQL: '%s'\n", sql);
+}
+
   { "includes",
     "CREATE TABLE IF NOT EXISTS includes (\n"
       "\t-- #include relations.\n"
@@ -491,7 +496,7 @@ static bool bindIntParameter(SqlStmt &s,const char *name,int value)
 {
   int idx = sqlite3_bind_parameter_index(s.stmt, name);
   if (idx==0) {
-    msg("sqlite3_bind_parameter_index(%s)[%s] failed: %s\n", name, s.query, sqlite3_errmsg(s.db));
+    msg("sqlite3_bind_parameter_index(%s)[%s] failed to find column: %s\n", name, s.query, sqlite3_errmsg(s.db));
     return false;
   }
   int rv = sqlite3_bind_int(s.stmt, idx, value);
@@ -508,7 +513,7 @@ static int step(SqlStmt &s,bool getRowId=FALSE, bool select=FALSE)
   int rc = sqlite3_step(s.stmt);
   if (rc!=SQLITE_DONE && rc!=SQLITE_ROW)
   {
-    msg("sqlite3_step: %s\n", sqlite3_errmsg(s.db));
+    msg("sqlite3_step: %s (rc: %d)\n", sqlite3_errmsg(s.db), rc);
     sqlite3_reset(s.stmt);
     sqlite3_clear_bindings(s.stmt);
     return -1;
@@ -1497,6 +1502,8 @@ void generateSqlite3()
   {
     return;
   }
+  // debug: enable below to see all executed statements
+  // sqlite3_trace(db, &sqlLog, NULL);
   beginTransaction(db);
   pragmaTuning(db);
 
