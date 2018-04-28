@@ -79,7 +79,8 @@ const char * table_schema[][2] = {
   },
   { "refids",
     "CREATE TABLE IF NOT EXISTS refids (\n"
-      "\trefid        TEXT PRIMARY KEY NOT NULL\n"
+      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\trefid        TEXT NOT NULL UNIQUE\n"
       ");"
   },
   { "xrefs",
@@ -572,12 +573,12 @@ struct Refid insertRefid(const char *refid)
   ret.created = FALSE;
   if (refid==0) return ret;
 
-  bindTextParameter(def_select,":refid",refid);
-  ret.rowid=step(def_select,TRUE,TRUE);
+  bindTextParameter(refids_select,":refid",refid);
+  ret.rowid=step(refids_select,TRUE,TRUE);
   if (ret.rowid==0)
   {
-    bindTextParameter(def_insert,":refid",refid);
-    ret.rowid=step(def_insert,TRUE);
+    bindTextParameter(refids_insert,":refid",refid);
+    ret.rowid=step(refids_insert,TRUE);
     ret.created = TRUE;
   }
 
@@ -779,8 +780,8 @@ static int prepareStatements(sqlite3 *db)
   -1==prepareStatement(db, memberdef_insert) ||
   -1==prepareStatement(db, files_insert) ||
   -1==prepareStatement(db, files_select) ||
-  -1==prepareStatement(db, def_insert) ||
-  -1==prepareStatement(db, def_select) ||
+  -1==prepareStatement(db, refids_insert) ||
+  -1==prepareStatement(db, refids_select) ||
   -1==prepareStatement(db, incl_insert)||
   -1==prepareStatement(db, incl_select)||
   -1==prepareStatement(db, params_insert) ||
