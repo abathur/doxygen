@@ -234,6 +234,10 @@ struct SqlStmt {
   sqlite3 *db;
 };
 //////////////////////////////////////////////////////
+/* If you add a new statement below, make sure to add it to
+   prepareStatements(). If sqlite3 is segfaulting (especially in
+   sqlite3_clear_bindings(), using an un-prepared statement may
+   be the cause. */
 SqlStmt incl_insert = { "INSERT INTO includes "
   "( local, id_src, id_dst ) "
     "VALUES "
@@ -908,8 +912,12 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 {
   // + declaration/definition arg lists
   // + reimplements
+  // NOTE: This erroneously claimed from the first commit that it covered reimplements, reimplementedBy & exceptions
   // + reimplementedBy
+  // - reimplements
   // + exceptions
+  // - reimplementedBy
+  // - exceptions
   // + const/volatile specifiers
   // - examples
   // + source definition
@@ -1003,6 +1011,8 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     bindIntParameter(memberdef_insert,":settable",md->isSettable());
     bindIntParameter(memberdef_insert,":privatesettable",md->isPrivateSettable());
     bindIntParameter(memberdef_insert,":protectedsettable",md->isProtectedSettable());
+
+    //TODO:: This seems like a lot of work to find the accessor; I wonder if there's a shortcut?
     if (md->isAssign() || md->isCopy() || md->isRetain()
      || md->isStrong() || md->isWeak())
     {
@@ -1321,6 +1331,7 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   }
 
   // + list of all members
+  // NOTE: this is just a list of *local* members, there's a completely separate process for identifying the sort of meta list xmlgen uses to scoop up inherited members
   QListIterator<MemberList> mli(cd->getMemberLists());
   MemberList *ml;
   for (mli.toFirst();(ml=mli.current());++mli)
@@ -1480,6 +1491,8 @@ static void generateSqlite3ForDir(const DirDef *dd)
 #warning WorkInProgress
 }
 
+// pages are just another kind of compound
+// kinds of compound: class, struct, union, interface, protocol, category, exception, service, singleton, module, type, file, namespace, group, page, example, dir
 static void generateSqlite3ForPage(const PageDef *pd,bool isExample)
 {
 #warning WorkInProgress
