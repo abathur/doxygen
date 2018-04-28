@@ -45,12 +45,13 @@
 //#define DBG_CTX(x) printf x
 #define DBG_CTX(x) do { } while(0)
 
-const char * schema_queries[][2] = {
 // used by sqlite3_trace in generateSqlite3()
 static void sqlLog(void *dbName, const char *sql){
   msg("SQL: '%s'\n", sql);
 }
 
+const char * table_schema[][2] = {
+  /* TABLES */
   { "includes",
     "CREATE TABLE IF NOT EXISTS includes (\n"
       "\t-- #include relations.\n"
@@ -214,9 +215,13 @@ static void sqlLog(void *dbName, const char *sql){
       ");"
   },
   { "innernamespaces",
+};
     "CREATE TABLE IF NOT EXISTS innernamespaces (\n"
+  const char * view_schema[][2] = {
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+  /* VIEWS */
       "\trefid        INTEGER NOT NULL,\n"
+  {
       "\tname         TEXT NOT NULL\n"
       ");"
   }
@@ -768,15 +773,35 @@ static void pragmaTuning(sqlite3 *db)
   sqlite3_exec(db, "PRAGMA temp_store = MEMORY;", NULL, NULL, &sErrMsg);
 }
 
-static int initializeSchema(sqlite3* db)
+static int initializeTables(sqlite3* db)
 {
   int rc;
   sqlite3_stmt *stmt = 0;
 
   msg("Initializing DB schema...\n");
-  for (unsigned int k = 0; k < sizeof(schema_queries) / sizeof(schema_queries[0]); k++)
+  for (unsigned int k = 0; k < sizeof(table_schema) / sizeof(table_schema[0]); k++)
   {
-    const char *q = schema_queries[k][1];
+    const char *q = table_schema[k][1];
+    char *errmsg;
+    rc = sqlite3_exec(db, q, NULL, NULL, &errmsg);
+    if (rc != SQLITE_OK)
+    {
+      msg("failed to execute query: %s\n\t%s\n", q, errmsg);
+      return -1;
+    }
+  }
+  return 0;
+}
+
+static int initializeViews(sqlite3* db)
+{
+  int rc;
+  sqlite3_stmt *stmt = 0;
+
+  msg("Initializing DB schema...\n");
+  for (unsigned int k = 0; k < sizeof(view_schema) / sizeof(view_schema[0]); k++)
+  {
+    const char *q = view_schema[k][1];
     char *errmsg;
     rc = sqlite3_exec(db, q, NULL, NULL, &errmsg);
     if (rc != SQLITE_OK)
@@ -1507,7 +1532,7 @@ void generateSqlite3()
   beginTransaction(db);
   pragmaTuning(db);
 
-  if (-1==initializeSchema(db))
+  if (-1==initializeTables(db))
     return;
 
   if ( -1 == prepareStatements(db) )
@@ -1596,6 +1621,9 @@ void generateSqlite3()
     msg("Generating Sqlite3 output for the main page\n");
     generateSqlite3ForPage(Doxygen::mainPage,FALSE);
   }
+
+  if (-1==initializeViews(db))
+    return; // TODO: copied from initializeSchema; not certain if there's a more appropriate action to take on a failure here?
 
   endTransaction(db);
 }
