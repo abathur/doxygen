@@ -283,6 +283,14 @@ SqlStmt xrefs_insert= {"INSERT INTO xrefs "
     ,NULL
 };
 //////////////////////////////////////////////////////
+SqlStmt memberdef_exists={"SELECT EXISTS (SELECT * FROM memberdef WHERE rowid = :rowid)"
+    ,NULL
+};
+
+SqlStmt memberdef_incomplete={"SELECT EXISTS (SELECT * FROM memberdef WHERE rowid = :rowid AND inline != 2 AND inline != :new_inline)"
+    ,NULL
+};
+
 SqlStmt memberdef_insert={"INSERT INTO memberdef "
     "("
       "refid,"
@@ -409,8 +417,9 @@ SqlStmt compounddef_insert={"INSERT INTO compounddef "
     ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt basecompoundref_insert={"INSERT INTO  basecompoundref "
-    "( base, derived, refid, prot, virt ) "
+SqlStmt compounddef_exists={"SELECT EXISTS (SELECT * FROM compounddef WHERE rowid = :rowid)"
+    ,NULL
+};
     "VALUES "
     "(:base,:derived,:refid,:prot,:virt )"
     ,NULL
@@ -548,26 +557,57 @@ static int insertFile(const char* name)
   return rowid;
 }
 
-static int insertRefid(const char *refid)
-{
-  int rowid=-1;
-  if (refid==0) return rowid;
+struct Refid {
+  int rowid;
+  const char *refid;
+  bool created;
+};
 
-  bindTextParameter(refids_select,":refid",refid);
-  rowid=step(refids_select,TRUE,TRUE);
-  if (rowid==0)
+struct Refid insertRefid(const char *refid)
+{
+  struct Refid ret;
+  ret.rowid=-1;
+  ret.refid=refid;
+  ret.created = FALSE;
+  if (refid==0) return ret;
+
+  bindTextParameter(def_select,":refid",refid);
+  ret.rowid=step(def_select,TRUE,TRUE);
+  if (ret.rowid==0)
   {
-    bindTextParameter(refids_insert,":refid",refid);
-    rowid=step(refids_insert,TRUE);
+    bindTextParameter(def_insert,":refid",refid);
+    ret.rowid=step(def_insert,TRUE);
+    ret.created = TRUE;
   }
-  return rowid;
+
+  return ret;
 }
 
-
-static bool insertMemberReference(int refid_src, int refid_dst,
-                                  int id_file, int line, int column)
+static bool memberdefExists(struct Refid refid)
 {
-  if (id_file==-1||refid_src==-1||refid_dst==-1)
+  bindIntParameter(memberdef_exists,":rowid",refid.rowid);
+  int test = step(memberdef_exists,TRUE,TRUE);
+  return test ? true : false;
+}
+
+static bool memberdefIncomplete(struct Refid refid, const MemberDef* md)
+{
+  bindIntParameter(memberdef_incomplete,":rowid",refid.rowid);
+  bindIntParameter(memberdef_incomplete,":new_inline",md->isInline());
+  int test = step(memberdef_incomplete,TRUE,TRUE);
+  return test ? true : false;
+}
+
+static bool compounddefExists(struct Refid refid)
+{
+  bindIntParameter(compounddef_exists,":rowid",refid.rowid);
+  int test = step(compounddef_exists,TRUE,TRUE);
+  return test ? true : false;
+}
+
+static bool insertMemberReference(struct Refid src_refid, struct Refid dst_refid)
+{
+  if (src_refid.rowid==-1||dst_refid.rowid==-1)
     return false;
 
   if (
@@ -733,17 +773,20 @@ static int prepareStatement(sqlite3 *db, SqlStmt &s)
 static int prepareStatements(sqlite3 *db)
 {
   if (
+  -1==prepareStatement(db, memberdef_exists) ||
+  -1==prepareStatement(db, memberdef_incomplete) ||
   -1==prepareStatement(db, memberdef_insert) ||
   -1==prepareStatement(db, files_insert) ||
   -1==prepareStatement(db, files_select) ||
-  -1==prepareStatement(db, refids_insert) ||
-  -1==prepareStatement(db, refids_select) ||
+  -1==prepareStatement(db, def_insert) ||
+  -1==prepareStatement(db, def_select) ||
   -1==prepareStatement(db, incl_insert)||
   -1==prepareStatement(db, incl_select)||
   -1==prepareStatement(db, params_insert) ||
   -1==prepareStatement(db, params_select) ||
   -1==prepareStatement(db, xrefs_insert) ||
   -1==prepareStatement(db, innerclass_insert) ||
+  -1==prepareStatement(db, compounddef_exists) ||
   -1==prepareStatement(db, compounddef_insert) ||
   -1==prepareStatement(db, basecompoundref_insert) ||
   -1==prepareStatement(db, derivedcompoundref_insert) ||
