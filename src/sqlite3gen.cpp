@@ -57,11 +57,10 @@ const char * table_schema[][2] = {
       "\t-- #include relations.\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tlocal        INTEGER NOT NULL,\n"
-      "\tid_src       INTEGER NOT NULL,  -- File id of the includer.\n"
-      "\tid_dst       INTEGER NOT NULL   -- File id of the includee.\n"
-      ");\n"
-    "CREATE UNIQUE INDEX idx_includes ON includes\n"
-      "\t(local, id_src, id_dst);"
+      "\tsrc_id       INTEGER NOT NULL,  -- File id of the includer.\n"
+      "\tdst_id       INTEGER NOT NULL,   -- File id of the includee.\n"
+      "\tUNIQUE(local, src_id, dst_id) ON CONFLICT IGNORE\n"
+      ");"
   },
   { "innerclass",
     "CREATE TABLE IF NOT EXISTS innerclass (\n"
@@ -239,13 +238,13 @@ struct SqlStmt {
    sqlite3_clear_bindings(), using an un-prepared statement may
    be the cause. */
 SqlStmt incl_insert = { "INSERT INTO includes "
-  "( local, id_src, id_dst ) "
+  "( local, src_id, dst_id ) "
     "VALUES "
-    "(:local,:id_src,:id_dst )"
+    "(:local,:src_id,:dst_id )"
     ,NULL
 };
 SqlStmt incl_select = { "SELECT COUNT(*) FROM includes WHERE "
-  "local=:local AND id_src=:id_src AND id_dst=:id_dst"
+  "local=:local AND src_id=:src_id AND dst_id=:dst_id"
     ,NULL
 };
 //////////////////////////////////////////////////////
@@ -1296,17 +1295,17 @@ static void generateSqlite3ForClass(const ClassDef *cd)
     if (nm.isEmpty() && ii->fileDef) nm = ii->fileDef->docName();
     if (!nm.isEmpty())
     {
-      int id_dst=insertFile(nm);
-      if (id_dst!=-1) {
+      int dst_id=insertFile(stripFromPath(nm));
+      if (dst_id!=-1) {
         bindIntParameter(incl_select,":local",ii->local);
-        bindIntParameter(incl_select,":id_src",id_file);
-        bindIntParameter(incl_select,":id_dst",id_dst);
+        bindIntParameter(incl_select,":src_id",id_file);
+        bindIntParameter(incl_select,":dst_id",dst_id);
         int count=step(incl_select,TRUE,TRUE);
         if (count==0)
         {
           bindIntParameter(incl_insert,":local",ii->local);
-          bindIntParameter(incl_insert,":id_src",id_file);
-          bindIntParameter(incl_insert,":id_dst",id_dst);
+          bindIntParameter(incl_insert,":src_id",id_file);
+          bindIntParameter(incl_insert,":dst_id",dst_id);
           step(incl_insert);
         }
       }
@@ -1411,15 +1410,15 @@ static void generateSqlite3ForFile(const FileDef *fd)
     QListIterator<IncludeInfo> ili(*fd->includeFileList());
     for (ili.toFirst();(ii=ili.current());++ili)
     {
-      int id_src=insertFile(fd->absFilePath().data());
-      int id_dst=insertFile(ii->includeName.data());
+      int src_id=insertFile(stripFromPath(fd->absFilePath().data()));
+      int dst_id=insertFile(stripFromPath(ii->includeName.data()));
       bindIntParameter(incl_select,":local",ii->local);
-      bindIntParameter(incl_select,":id_src",id_src);
-      bindIntParameter(incl_select,":id_dst",id_dst);
+      bindIntParameter(incl_select,":src_id",src_id);
+      bindIntParameter(incl_select,":dst_id",dst_id);
       if (step(incl_select,TRUE,TRUE)==0) {
         bindIntParameter(incl_insert,":local",ii->local);
-        bindIntParameter(incl_insert,":id_src",id_src);
-        bindIntParameter(incl_insert,":id_dst",id_dst);
+        bindIntParameter(incl_insert,":src_id",src_id);
+        bindIntParameter(incl_insert,":dst_id",dst_id);
         step(incl_insert);
       }
     }
@@ -1431,15 +1430,15 @@ static void generateSqlite3ForFile(const FileDef *fd)
     QListIterator<IncludeInfo> ili(*fd->includedByFileList());
     for (ili.toFirst();(ii=ili.current());++ili)
     {
-      int id_src=insertFile(ii->includeName);
-      int id_dst=insertFile(fd->absFilePath());
+      int src_id=insertFile(stripFromPath(ii->includeName));
+      int dst_id=insertFile(stripFromPath(fd->absFilePath()));
       bindIntParameter(incl_select,":local",ii->local);
-      bindIntParameter(incl_select,":id_src",id_src);
-      bindIntParameter(incl_select,":id_dst",id_dst);
+      bindIntParameter(incl_select,":src_id",src_id);
+      bindIntParameter(incl_select,":dst_id",dst_id);
       if (step(incl_select,TRUE,TRUE)==0) {
         bindIntParameter(incl_insert,":local",ii->local);
-        bindIntParameter(incl_insert,":id_src",id_src);
-        bindIntParameter(incl_insert,":id_dst",id_dst);
+        bindIntParameter(incl_insert,":src_id",src_id);
+        bindIntParameter(incl_insert,":dst_id",dst_id);
         step(incl_insert);
       }
     }
