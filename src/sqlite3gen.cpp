@@ -83,18 +83,15 @@ const char * table_schema[][2] = {
       "\trefid        TEXT NOT NULL UNIQUE\n"
       ");"
   },
+  /* xrefs table combines the xml <referencedby> and <references> nodes */
   { "xrefs",
     "CREATE TABLE IF NOT EXISTS xrefs (\n"
       "\t-- Cross reference relation.\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\trefid_src    INTEGER NOT NULL, -- referrer id.\n"
-      "\trefid_dst    INTEGER NOT NULL, -- referee id.\n"
-      "\tid_file      INTEGER NOT NULL, -- file where the reference is happening.\n"
-      "\tline         INTEGER NOT NULL, -- line where the reference is happening.\n"
-      "\tcolumn       INTEGER NOT NULL  -- column where the reference is happening.\n"
+      "\tsrc_refid    INTEGER NOT NULL REFERENCES refids, -- referrer id.\n"
+      "\tdst_refid    INTEGER NOT NULL REFERENCES refids, -- referee id.\n"
+      "\tUNIQUE(src_refid, dst_refid) ON CONFLICT IGNORE\n"
       ");\n"
-    "CREATE UNIQUE INDEX idx_xrefs ON xrefs\n"
-      "\t(refid_src, refid_dst, id_file, line, column);"
   },
   { "memberdef",
     "CREATE TABLE IF NOT EXISTS memberdef (\n"
@@ -279,10 +276,11 @@ SqlStmt refids_insert = {"INSERT INTO refids "
 };
 //////////////////////////////////////////////////////
 SqlStmt xrefs_insert= {"INSERT INTO xrefs "
-  "( refid_src, refid_dst, id_file, line, column )"
+  "( src_refid, dst_refid )"
     "VALUES "
-    "(:refid_src,:refid_dst,:id_file,:line,:column )"
+    "(:src_refid,:dst_refid )"
     ,NULL
+};//////////////////////////////////////////////////////
 };
 //////////////////////////////////////////////////////
 SqlStmt memberdef_exists={"SELECT EXISTS (SELECT * FROM memberdef WHERE rowid = :rowid)"
@@ -613,11 +611,8 @@ static bool insertMemberReference(struct Refid src_refid, struct Refid dst_refid
     return false;
 
   if (
-     !bindIntParameter(xrefs_insert,":refid_src",refid_src) ||
-     !bindIntParameter(xrefs_insert,":refid_dst",refid_dst) ||
-     !bindIntParameter(xrefs_insert,":id_file",id_file) ||
-     !bindIntParameter(xrefs_insert,":line",line) ||
-     !bindIntParameter(xrefs_insert,":column",column)
+     !bindIntParameter(xrefs_insert,":src_refid",src_refid.rowid) ||
+     !bindIntParameter(xrefs_insert,":dst_refid",dst_refid.rowid)
      )
   {
     return false;
