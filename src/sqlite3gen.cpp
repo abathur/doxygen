@@ -194,7 +194,7 @@ const char * table_schema[][2] = {
       /// @todo make a `detaileddescription' table
       "\tdetaileddescription  TEXT,\n"
       "\tbriefdescription     TEXT,\n"
-      "\tinbodydescription    TEXT\n"
+      "\tinbodydescription    TEXT,\n"
       "\tFOREIGN KEY (rowid) REFERENCES refids (rowid)\n"
       ");"
   },
@@ -224,14 +224,14 @@ const char * table_schema[][2] = {
   { "compounddef",
     "CREATE TABLE IF NOT EXISTS compounddef (\n"
       "\t-- class/struct definitions.\n"
-      "\tname         TEXT NOT NULL,\n"
       "\trowid                INTEGER PRIMARY KEY NOT NULL,\n"
-      "\tkind         TEXT NOT NULL,\n"
+      "\tname                 TEXT NOT NULL,\n"
+      "\tkind                 TEXT NOT NULL,\n"
+      "\tprot                 INTEGER,\n"
+      "\tid_file              INTEGER NOT NULL,\n"
+      "\tline                 INTEGER NOT NULL,\n"
+      "\tcolumn               INTEGER NOT NULL,\n"
       "\tFOREIGN KEY (rowid) REFERENCES refids (rowid)\n"
-      "\tprot         INTEGER NOT NULL,\n"
-      "\tid_file      INTEGER NOT NULL,\n"
-      "\tline         INTEGER NOT NULL,\n"
-      "\tcolumn       INTEGER NOT NULL\n"
       ");"
   },
   { "compoundref",
@@ -1379,10 +1379,10 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   if (mdict!=0)
   {
     MemberSDict::IteratorDict mdi(*mdict);
-    MemberDef *rmd;
+    const MemberDef *rmd;
     for (mdi.toFirst();(rmd=mdi.current());++mdi)
     {
-      insertMemberReference(md,rmd);//,mdi.currentKey());
+      insertMemberReference(md,rmd);
     }
   }
   // + source referenced by
@@ -1390,10 +1390,10 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   if (mdict!=0)
   {
     MemberSDict::IteratorDict mdi(*mdict);
-    MemberDef *rmd;
+    const  MemberDef *rmd;
     for (mdi.toFirst();(rmd=mdi.current());++mdi)
     {
-      insertMemberReference(rmd,md);//,mdi.currentKey());
+      insertMemberReference(rmd,md);
     }
   }
 }
@@ -1406,7 +1406,7 @@ static void generateSqlite3Section( const Definition *d,
 {
   if (ml==0) return;
   MemberListIterator mli(*ml);
-  MemberDef *md;
+  const MemberDef *md;
   int count=0;
   for (mli.toFirst();(md=mli.current());++mli)
   {
@@ -1771,7 +1771,7 @@ void generateSqlite3()
 
   // + classes
   ClassSDict::Iterator cli(*Doxygen::classSDict);
-  ClassDef *cd;
+  const ClassDef *cd;
   for (cli.toFirst();(cd=cli.current());++cli)
   {
     msg("Generating Sqlite3 output for class %s\n",cd->name().data());
@@ -1780,7 +1780,7 @@ void generateSqlite3()
 
   // + namespaces
   NamespaceSDict::Iterator nli(*Doxygen::namespaceSDict);
-  NamespaceDef *nd;
+  const NamespaceDef *nd;
   for (nli.toFirst();(nd=nli.current());++nli)
   {
     msg("Generating Sqlite3 output for namespace %s\n",nd->name().data());
@@ -1793,7 +1793,7 @@ void generateSqlite3()
   for (;(fn=fnli.current());++fnli)
   {
     FileNameIterator fni(*fn);
-    FileDef *fd;
+    const FileDef *fd;
     for (;(fd=fni.current());++fni)
     {
       msg("Generating Sqlite3 output for file %s\n",fd->name().data());
@@ -1803,7 +1803,7 @@ void generateSqlite3()
 
   // + groups
   GroupSDict::Iterator gli(*Doxygen::groupSDict);
-  GroupDef *gd;
+  const GroupDef *gd;
   for (;(gd=gli.current());++gli)
   {
     msg("Generating Sqlite3 output for group %s\n",gd->name().data());
@@ -1813,7 +1813,7 @@ void generateSqlite3()
   // + page
   {
     PageSDict::Iterator pdi(*Doxygen::pageSDict);
-    PageDef *pd=0;
+    const PageDef *pd=0;
     for (pdi.toFirst();(pd=pdi.current());++pdi)
     {
       msg("Generating Sqlite3 output for page %s\n",pd->name().data());
@@ -1823,7 +1823,7 @@ void generateSqlite3()
 
   // + dirs
   {
-    DirDef *dir;
+    const DirDef *dir;
     DirSDict::Iterator sdi(*Doxygen::directories);
     for (sdi.toFirst();(dir=sdi.current());++sdi)
     {
@@ -1835,7 +1835,7 @@ void generateSqlite3()
   // + examples
   {
     PageSDict::Iterator pdi(*Doxygen::exampleSDict);
-    PageDef *pd=0;
+    const PageDef *pd=0;
     for (pdi.toFirst();(pd=pdi.current());++pdi)
     {
       msg("Generating Sqlite3 output for example %s\n",pd->name().data());
