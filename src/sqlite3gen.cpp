@@ -65,8 +65,49 @@ const char * table_schema[][2] = {
   { "innerclass",
     "CREATE TABLE IF NOT EXISTS innerclass (\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\trefid        INTEGER NOT NULL,\n"
+      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tprot         INTEGER NOT NULL,\n"
+      "\tname         TEXT NOT NULL\n"
+      ");"
+  },
+  { "innerpage",
+    "CREATE TABLE IF NOT EXISTS innerpage (\n"
+      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tname         TEXT NOT NULL\n"
+      ");"
+  },
+  { "innernamespace",
+    "CREATE TABLE IF NOT EXISTS innernamespace (\n"
+      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tname         TEXT NOT NULL\n"
+      ");"
+  },
+  { "innergroup",
+    "CREATE TABLE IF NOT EXISTS innergroup (\n"
+      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tname         TEXT NOT NULL\n"
+      ");"
+  },
+  { "innerfile",
+    "CREATE TABLE IF NOT EXISTS innerfile (\n"
+      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tname         TEXT NOT NULL\n"
+      ");"
+  },
+  { "innerdir",
+    "CREATE TABLE IF NOT EXISTS innerdir (\n"
+      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tname         TEXT NOT NULL\n"
       ");"
   },
@@ -212,16 +253,10 @@ const char * table_schema[][2] = {
       "\tid_param     INTEGER NOT NULL\n"
       ");"
   },
-  { "innernamespaces",
 };
-    "CREATE TABLE IF NOT EXISTS innernamespaces (\n"
   const char * view_schema[][2] = {
-      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
   /* VIEWS */
-      "\trefid        INTEGER NOT NULL,\n"
   {
-      "\tname         TEXT NOT NULL\n"
-      ");"
   }
 };
 
@@ -248,10 +283,45 @@ SqlStmt incl_select = { "SELECT COUNT(*) FROM includes WHERE "
 };
 //////////////////////////////////////////////////////
 SqlStmt innerclass_insert={"INSERT INTO innerclass "
-    "( refid, prot, name )"
+    "( inner_refid, outer_refid, prot, name )"
     "VALUES "
-    "(:refid,:prot,:name )"
+    "(:inner_refid,:outer_refid,:prot,:name )"
     ,NULL
+};
+//////////////////////////////////////////////////////
+SqlStmt innerpage_insert={"INSERT INTO innerpage "
+    "( inner_refid, outer_refid, name )"
+    "VALUES "
+    "(:inner_refid,:outer_refid,:name )"
+    ,NULL
+};
+//////////////////////////////////////////////////////
+SqlStmt innernamespace_insert={"INSERT INTO innernamespace "
+    "( inner_refid, outer_refid, name)"
+    "VALUES "
+    "(:inner_refid,:outer_refid,:name)",
+    NULL
+};
+//////////////////////////////////////////////////////
+SqlStmt innergroup_insert={"INSERT INTO innergroup "
+    "( inner_refid, outer_refid, name)"
+    "VALUES "
+    "(:inner_refid,:outer_refid,:name)",
+    NULL
+};
+//////////////////////////////////////////////////////
+SqlStmt innerdir_insert={"INSERT INTO innerdir "
+    "( inner_refid, outer_refid, name)"
+    "VALUES "
+    "(:inner_refid,:outer_refid,:name)",
+    NULL
+};
+//////////////////////////////////////////////////////
+SqlStmt innerfile_insert={"INSERT INTO innerfile "
+    "( inner_refid, outer_refid, name)"
+    "VALUES "
+    "(:inner_refid,:outer_refid,:name)",
+    NULL
 };
 //////////////////////////////////////////////////////
 SqlStmt files_select = {"SELECT rowid FROM files WHERE name=:name"
@@ -453,13 +523,6 @@ SqlStmt memberdef_params_insert={ "INSERT INTO  memberdef_params "
     "VALUES "
     "(:id_memberdef,:id_param)"
     ,NULL
-};
-//////////////////////////////////////////////////////
-SqlStmt innernamespace_insert={"INSERT INTO  innernamespaces "
-    "( refid, name)"
-    "VALUES "
-    "(:refid,:name)",
-    NULL
 };
 
 
@@ -782,6 +845,10 @@ static int prepareStatements(sqlite3 *db)
   -1==prepareStatement(db, params_select) ||
   -1==prepareStatement(db, xrefs_insert) ||
   -1==prepareStatement(db, innerclass_insert) ||
+  -1==prepareStatement(db, innerpage_insert) ||
+  -1==prepareStatement(db, innergroup_insert) ||
+  -1==prepareStatement(db, innerfile_insert) ||
+  -1==prepareStatement(db, innerdir_insert) ||
   -1==prepareStatement(db, compounddef_exists) ||
   -1==prepareStatement(db, compounddef_insert) ||
   -1==prepareStatement(db, basecompoundref_insert) ||
@@ -856,18 +923,20 @@ static int initializeViews(sqlite3* db)
 }
 
 ////////////////////////////////////////////
-static void writeInnerClasses(const ClassSDict *cl)
+static void writeInnerClasses(const ClassSDict *cl, struct Refid outer_refid)
 {
   if (!cl) return;
 
   ClassSDict::Iterator cli(*cl);
-  ClassDef *cd;
+  const ClassDef *cd;
   for (cli.toFirst();(cd=cli.current());++cli)
   {
     if (!cd->isHidden() && cd->name().find('@')==-1) // skip anonymous scopes
     {
-      int refid = insertRefid(cd->getOutputFileBase());
-      bindIntParameter(innerclass_insert,":refid", refid);
+      struct Refid inner_refid = insertRefid(cd->getOutputFileBase());
+
+      bindIntParameter(innerclass_insert,":inner_refid", inner_refid.rowid);
+      bindIntParameter(innerclass_insert,":outer_refid", outer_refid.rowid);
       bindIntParameter(innerclass_insert,":prot",cd->protection());
       bindTextParameter(innerclass_insert,":name",cd->name());
       step(innerclass_insert);
@@ -876,19 +945,20 @@ static void writeInnerClasses(const ClassSDict *cl)
 }
 
 
-static void writeInnerNamespaces(const NamespaceSDict *nl)
+static void writeInnerNamespaces(const NamespaceSDict *nl, struct Refid outer_refid)
 {
   if (nl)
   {
     NamespaceSDict::Iterator nli(*nl);
-    NamespaceDef *nd;
+    const NamespaceDef *nd;
     for (nli.toFirst();(nd=nli.current());++nli)
     {
-      if (!nd->isHidden() && nd->name().find('@')==-1) // skip anonymouse scopes
+      if (!nd->isHidden() && nd->name().find('@')==-1) // skip anonymous scopes
       {
-        int refid = insertRefid(nd->getOutputFileBase());
-        bindIntParameter(innernamespace_insert,":refid",refid);
-        bindTextParameter(innernamespace_insert,":name",nd->name(),FALSE);
+        struct Refid inner_refid = insertRefid(nd->getOutputFileBase());
+
+        bindIntParameter(innernamespace_insert,":inner_refid",inner_refid.rowid);
+        bindIntParameter(innernamespace_insert,":outer_refid",outer_refid.rowid);
         step(innernamespace_insert);
       }
     }
