@@ -96,8 +96,7 @@ const char * table_schema[][2] = {
   { "memberdef",
     "CREATE TABLE IF NOT EXISTS memberdef (\n"
       "\t-- All processed identifiers.\n"
-      "\trowid                INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\trefid                INTEGER NOT NULL,  -- see the refids table\n"
+      "\trowid                INTEGER PRIMARY KEY NOT NULL,\n"
       "\tname                 TEXT NOT NULL,\n"
       "\tdefinition           TEXT,\n"
       "\ttype                 TEXT,\n"
@@ -154,15 +153,16 @@ const char * table_schema[][2] = {
       "\tdetaileddescription  TEXT,\n"
       "\tbriefdescription     TEXT,\n"
       "\tinbodydescription    TEXT\n"
+      "\tFOREIGN KEY (rowid) REFERENCES refids (rowid)\n"
       ");"
   },
   { "compounddef",
     "CREATE TABLE IF NOT EXISTS compounddef (\n"
       "\t-- class/struct definitions.\n"
-      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tname         TEXT NOT NULL,\n"
+      "\trowid                INTEGER PRIMARY KEY NOT NULL,\n"
       "\tkind         TEXT NOT NULL,\n"
-      "\trefid        INTEGER NOT NULL,\n"
+      "\tFOREIGN KEY (rowid) REFERENCES refids (rowid)\n"
       "\tprot         INTEGER NOT NULL,\n"
       "\tid_file      INTEGER NOT NULL,\n"
       "\tline         INTEGER NOT NULL,\n"
@@ -293,7 +293,7 @@ SqlStmt memberdef_incomplete={"SELECT EXISTS (SELECT * FROM memberdef WHERE rowi
 
 SqlStmt memberdef_insert={"INSERT INTO memberdef "
     "("
-      "refid,"
+      "rowid,"
       "name,"
       "definition,"
       "type,"
@@ -351,7 +351,7 @@ SqlStmt memberdef_insert={"INSERT INTO memberdef "
     ")"
     "VALUES "
     "("
-      ":refid,"
+      ":rowid,"
       ":name,"
       ":definition,"
       ":type,"
@@ -411,12 +411,11 @@ SqlStmt memberdef_insert={"INSERT INTO memberdef "
 };
 //////////////////////////////////////////////////////
 SqlStmt compounddef_insert={"INSERT INTO compounddef "
-    "( name, kind, prot, refid, id_file, line, column ) "
+    "( rowid, name, kind, prot, id_file, line, column ) "
     "VALUES "
-    "(:name,:kind,:prot,:refid,:id_file,:line,:column )"
+    "(:rowid, :name,:kind,:prot,:id_file,:line,:column )"
     ,NULL
 };
-//////////////////////////////////////////////////////
 SqlStmt compounddef_exists={"SELECT EXISTS (SELECT * FROM compounddef WHERE rowid = :rowid)"
     ,NULL
 };
@@ -980,8 +979,8 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   QCString qrefid = md->getOutputFileBase() + "_1" + md->anchor();
   int refid = insertRefid(qrefid.data());
 
-  bindIntParameter(memberdef_insert,":refid", refid);
   bindIntParameter(memberdef_insert,":kind",md->memberType());
+  bindIntParameter(memberdef_insert,":rowid", refid.rowid);
   bindIntParameter(memberdef_insert,":prot",md->protection());
 
   bindIntParameter(memberdef_insert,":static",md->isStatic());
@@ -1123,11 +1122,10 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
               s->data(),
               md->getBodyDef()->getDefFileName().data(),
               md->getStartBodyLine()));
-        QCString qrefid_src = md->getOutputFileBase() + "_1" + md->anchor();
-        int refid_src = insertRefid(qrefid_src.data());
-        int refid_dst = insertRefid(s->data());
-        int id_file = insertFile(stripFromPath(md->getBodyDef()->getDefFileName()));
-        insertMemberReference(refid_src,refid_dst,id_file,md->getStartBodyLine(),-1);
+        QCString qsrc_refid = md->getOutputFileBase() + "_1" + md->anchor();
+        struct Refid src_refid = insertRefid(qsrc_refid.data());
+        struct Refid dst_refid = insertRefid(s->data());
+        insertMemberReference(src_refid,dst_refid);
       }
       ++li;
     }
@@ -1264,12 +1262,13 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   if (cd->templateMaster()!=0)  return; // skip generated template instances.
 
   msg("Generating Sqlite3 output for class %s\n",cd->name().data());
+  struct Refid refid = insertRefid(cd->getOutputFileBase());
+  if(!refid.created && compounddefExists(refid)){return;}// in theory we can omit a class that already has a refid--unless there are conditions under which we may encounter the class refid before parsing the class? Might want to create a test or assertion for this?
+  bindIntParameter(compounddef_insert,":rowid", refid.rowid);
 
   bindTextParameter(compounddef_insert,":name",cd->name());
   bindTextParameter(compounddef_insert,":kind",cd->compoundTypeString(),FALSE);
   bindIntParameter(compounddef_insert,":prot",cd->protection());
-  int refid = insertRefid(cd->getOutputFileBase());
-  bindIntParameter(compounddef_insert,":refid", refid);
 
   int id_file = insertFile(stripFromPath(cd->getDefFileName()));
   bindIntParameter(compounddef_insert,":id_file",id_file);
