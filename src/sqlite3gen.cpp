@@ -197,6 +197,18 @@ const char * table_schema[][2] = {
       "\tFOREIGN KEY (rowid) REFERENCES refids (rowid)\n"
       ");"
   },
+  /* links memberdefs to individual containing compounds; roughly equivalent to the XML "listofallmembers" node. */
+  { "member",
+    "CREATE TABLE IF NOT EXISTS member (\n"
+      "\trowid            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tscope_refid      INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tmemberdef_refid  INTEGER NOT NULL REFERENCES memberdef,\n"
+      "\tprot             INTEGER NOT NULL,\n"
+      "\tvirt             INTEGER NOT NULL,\n"
+      "\tambiguityscope   TEXT,\n"
+      "\tUNIQUE(scope_refid, memberdef_refid)\n"
+      ");"
+  },
   { "compounddef",
     "CREATE TABLE IF NOT EXISTS compounddef (\n"
       "\t-- class/struct definitions.\n"
@@ -467,6 +479,13 @@ SqlStmt memberdef_insert={"INSERT INTO memberdef "
       ":briefdescription,"
       ":inbodydescription"
     ")"
+    ,NULL
+};
+//////////////////////////////////////////////////////
+SqlStmt member_insert={"INSERT INTO member "
+    "( scope_refid, memberdef_refid, prot, virt, ambiguityscope ) "
+    "VALUES "
+    "(:scope_refid, :memberdef_refid, :prot, :virt, :ambiguityscope )"
     ,NULL
 };
 //////////////////////////////////////////////////////
@@ -821,6 +840,7 @@ static int prepareStatements(sqlite3 *db)
   -1==prepareStatement(db, memberdef_exists) ||
   -1==prepareStatement(db, memberdef_incomplete) ||
   -1==prepareStatement(db, memberdef_insert) ||
+  -1==prepareStatement(db, member_insert) ||
   -1==prepareStatement(db, files_insert) ||
   -1==prepareStatement(db, files_select) ||
   -1==prepareStatement(db, refids_insert) ||
