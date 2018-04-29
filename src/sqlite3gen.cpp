@@ -183,7 +183,8 @@ const char * table_schema[][2] = {
       "\tremovable            INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\traisable             INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       /// @todo make a `kind' table
-      "\tkind                 INTEGER DEFAULT 0, -- 0:define 1:function 2:variable 3:typedef 4:enum 5:enumvalue 6:signal 7:slot 8:friend 9:DCOP 10:property 11:event\n"
+      "\tkind                 TEXT NOT NULL, -- define function variable typedef enum enumvalue signal slot friend DCOP property event\n"
+      // strings for easier introspection & interop
       "\tbodystart            INTEGER DEFAULT 0, -- starting line of definition\n"
       "\tbodyend              INTEGER DEFAULT 0, -- ending line of definition\n"
       "\tid_bodyfile          INTEGER DEFAULT 0, -- file of definition\n"
@@ -269,7 +270,59 @@ const char * table_schema[][2] = {
 };
   const char * view_schema[][2] = {
   /* VIEWS */
+  // I think we actually want to do views AFTER we build the database, so that they can be indexed, but so we don't have to pay a performance penalty for inserts as we build.
   {
+    /*
+    Makes all reference/relation tables easier to use. For example:
+    1. query xrefs and join this view on either xrefs.dst_refid=ref.rowid or xrefs.src_refid=ref.rowid
+    3. receive everything you need to output a list of references to or from an entity
+
+    It also supports a simple name search/lookup that generalizes compound and member types.
+
+    NOTES:
+      - summary here is kinda cheating; for compounds it generalizes title and briefdescription because there's no single field that works as a quick introduction for both pages and classes
+      - I think there's value in extending this to fulltext or levenshtein distance-driven lookup/search, but I'm avoiding these for now as it takes some effort to enable them.
+
+    TODO:
+      - Does this name work? I named it 'ref' to suggest its role in bridging
+        references and relations, but it's role in generalized lookups of
+        both compounddefs and memberdefs has made me tempted to rename it
+        'def'
+    */
+    "ref",
+    "CREATE VIEW IF NOT EXISTS ref (\n"
+      "\trowid,\n"
+      "\trefid,\n"
+      "\tkind,\n"
+      "\tname,\n"
+      "\tsummary"
+    ")\n"
+    "as SELECT \n"
+      "\tdef.rowid,\n"
+      "\tdef.refid,\n"
+      "\tmemberdef.kind,\n"
+      "\tmemberdef.name,\n"
+      "\tmemberdef.briefdescription \n"
+    "FROM refids \n"
+    "JOIN memberdef ON refids.rowid=memberdef.rowid \n"
+    "UNION ALL \n"
+    "SELECT \n"
+      "\tdef.rowid,\n"
+      "\tdef.refid,\n"
+      "\tcompounddef.kind,\n"
+      "\tcompounddef.name,\n"
+      "\tCASE \n"
+        "\t\tWHEN briefdescription IS NOT NULL \n"
+        "\t\tTHEN briefdescription \n"
+        "\t\tELSE title \n"
+      "\tEND summary\n"
+    "FROM refids \n"
+    "JOIN compounddef ON refids.rowid=compounddef.rowid;"
+  },
+      "\tEXISTS (SELECT rowid FROM compoundref WHERE derived_refid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM xrefs WHERE dst_refid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM xrefs WHERE src_refid=ref.rowid)\n"
+    "FROM ref ORDER BY ref.rowid;"
   }
 };
 
@@ -1071,8 +1124,8 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   QCString qrefid = md->getOutputFileBase() + "_1" + md->anchor();
   int refid = insertRefid(qrefid.data());
 
-  bindIntParameter(memberdef_insert,":kind",md->memberType());
   bindIntParameter(memberdef_insert,":rowid", refid.rowid);
+  bindTextParameter(memberdef_insert,":kind",md->memberTypeName(),FALSE);
   bindIntParameter(memberdef_insert,":prot",md->protection());
 
   bindIntParameter(memberdef_insert,":static",md->isStatic());
