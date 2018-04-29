@@ -209,6 +209,17 @@ const char * table_schema[][2] = {
       "\tUNIQUE(scope_refid, memberdef_refid)\n"
       ");"
   },
+  /* reimplements table combines the xml <reimplementedby> and <reimplements> nodes */
+  { "reimplements",
+    "CREATE TABLE IF NOT EXISTS reimplements (\n"
+      "\t-- Cross reference relation.\n"
+      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tmemberdef_refid    INTEGER NOT NULL REFERENCES memberdef, -- reimplementing memberdef id.\n"
+      "\treimplemented_refid    INTEGER NOT NULL REFERENCES memberdef, -- reimplemented memberdef id.\n"
+      //removing line/column/id_file; I think we can look all of these up in sql
+      "\tUNIQUE(memberdef_refid, reimplemented_refid) ON CONFLICT IGNORE\n"
+      ");\n"
+  },
   { "compounddef",
     "CREATE TABLE IF NOT EXISTS compounddef (\n"
       "\t-- class/struct definitions.\n"
@@ -353,6 +364,11 @@ SqlStmt xrefs_insert= {"INSERT INTO xrefs "
     "(:src_refid,:dst_refid )"
     ,NULL
 };//////////////////////////////////////////////////////
+SqlStmt reimplements_insert= {"INSERT INTO reimplements "
+  "( memberdef_refid, reimplemented_refid )"
+    "VALUES "
+    "(:memberdef_refid,:reimplemented_refid )"
+    ,NULL
 };
 //////////////////////////////////////////////////////
 SqlStmt memberdef_exists={"SELECT EXISTS (SELECT * FROM memberdef WHERE rowid = :rowid)"
@@ -850,6 +866,7 @@ static int prepareStatements(sqlite3 *db)
   -1==prepareStatement(db, params_insert) ||
   -1==prepareStatement(db, params_select) ||
   -1==prepareStatement(db, xrefs_insert) ||
+  -1==prepareStatement(db, reimplements_insert) ||
   -1==prepareStatement(db, innerclass_insert) ||
   -1==prepareStatement(db, innerpage_insert) ||
   -1==prepareStatement(db, innergroup_insert) ||
