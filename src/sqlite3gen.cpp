@@ -210,24 +210,14 @@ const char * table_schema[][2] = {
       "\tcolumn       INTEGER NOT NULL\n"
       ");"
   },
-  { "basecompoundref",
-    "CREATE TABLE IF NOT EXISTS basecompoundref (\n"
-      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tbase         TEXT NOT NULL,\n"
-      "\tderived      TEXT NOT NULL,\n"
-      "\trefid        INTEGER NOT NULL,\n"
-      "\tprot         INTEGER NOT NULL,\n"
-      "\tvirt         INTEGER NOT NULL\n"
-      ");"
-  },
-  { "derivedcompoundref",
-    "CREATE TABLE IF NOT EXISTS derivedcompoundref (\n"
-      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tbase         TEXT NOT NULL,\n"
-      "\tderived      TEXT NOT NULL,\n"
-      "\trefid        INTEGER NOT NULL,\n"
-      "\tprot         INTEGER NOT NULL,\n"
-      "\tvirt         INTEGER NOT NULL\n"
+  { "compoundref",
+    "CREATE TABLE IF NOT EXISTS compoundref (\n"
+      "\trowid          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tbase_refid     INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tderived_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tprot           INTEGER NOT NULL,\n"
+      "\tvirt           INTEGER NOT NULL,\n"
+      "\tUNIQUE(base_refid, derived_refid)\n"
       ");"
   },
   { "params",
@@ -489,15 +479,11 @@ SqlStmt compounddef_insert={"INSERT INTO compounddef "
 SqlStmt compounddef_exists={"SELECT EXISTS (SELECT * FROM compounddef WHERE rowid = :rowid)"
     ,NULL
 };
-    "VALUES "
-    "(:base,:derived,:refid,:prot,:virt )"
-    ,NULL
-};
 //////////////////////////////////////////////////////
-SqlStmt derivedcompoundref_insert={"INSERT INTO  derivedcompoundref "
-    "( refid, prot, virt, base, derived ) "
+SqlStmt compoundref_insert={"INSERT INTO compoundref "
+    "( base_refid, derived_refid, prot, virt ) "
     "VALUES "
-    "(:refid,:prot,:virt,:base,:derived )"
+    "(:base_refid,:derived_refid,:prot,:virt )"
     ,NULL
 };
 //////////////////////////////////////////////////////
@@ -851,8 +837,7 @@ static int prepareStatements(sqlite3 *db)
   -1==prepareStatement(db, innerdir_insert) ||
   -1==prepareStatement(db, compounddef_exists) ||
   -1==prepareStatement(db, compounddef_insert) ||
-  -1==prepareStatement(db, basecompoundref_insert) ||
-  -1==prepareStatement(db, derivedcompoundref_insert) ||
+  -1==prepareStatement(db, compoundref_insert) ||
   -1==prepareStatement(db, memberdef_params_insert)||
   -1==prepareStatement(db, innernamespace_insert)
   )
@@ -1351,24 +1336,16 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   if (cd->baseClasses())
   {
     BaseClassListIterator bcli(*cd->baseClasses());
-    BaseClassDef *bcd;
+    const BaseClassDef *bcd;
     for (bcli.toFirst();(bcd=bcli.current());++bcli)
     {
-      int refid = insertRefid(bcd->classDef->getOutputFileBase());
-      bindIntParameter(basecompoundref_insert,":refid", refid);
-      bindIntParameter(basecompoundref_insert,":prot",bcd->prot);
-      bindIntParameter(basecompoundref_insert,":virt",bcd->virt);
-
-      if (!bcd->templSpecifiers.isEmpty())
-      {
-        bindTextParameter(basecompoundref_insert,":base",insertTemplateSpecifierInScope(bcd->classDef->name(),bcd->templSpecifiers),FALSE);
-      }
-      else
-      {
-        bindTextParameter(basecompoundref_insert,":base",bcd->classDef->displayName(),FALSE);
-      }
-      bindTextParameter(basecompoundref_insert,":derived",cd->displayName(),FALSE);
-      step(basecompoundref_insert);
+      struct Refid base_refid = insertRefid(bcd->classDef->getOutputFileBase());
+      struct Refid derived_refid = insertRefid(cd->getOutputFileBase());
+      bindIntParameter(compoundref_insert,":base_refid", base_refid.rowid);
+      bindIntParameter(compoundref_insert,":derived_refid", derived_refid.rowid);
+      bindIntParameter(compoundref_insert,":prot",bcd->prot);
+      bindIntParameter(compoundref_insert,":virt",bcd->virt);
+      step(compoundref_insert);
     }
   }
 
@@ -1376,23 +1353,16 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   if (cd->subClasses())
   {
     BaseClassListIterator bcli(*cd->subClasses());
-    BaseClassDef *bcd;
+    const BaseClassDef *bcd;
     for (bcli.toFirst();(bcd=bcli.current());++bcli)
     {
-      bindTextParameter(derivedcompoundref_insert,":base",cd->displayName(),FALSE);
-      if (!bcd->templSpecifiers.isEmpty())
-      {
-        bindTextParameter(derivedcompoundref_insert,":derived",insertTemplateSpecifierInScope(bcd->classDef->name(),bcd->templSpecifiers),FALSE);
-      }
-      else
-      {
-        bindTextParameter(derivedcompoundref_insert,":derived",bcd->classDef->displayName(),FALSE);
-      }
-      int refid = insertRefid(bcd->classDef->getOutputFileBase());
-      bindIntParameter(derivedcompoundref_insert,":refid", refid);
-      bindIntParameter(derivedcompoundref_insert,":prot",bcd->prot);
-      bindIntParameter(derivedcompoundref_insert,":virt",bcd->virt);
-      step(derivedcompoundref_insert);
+      struct Refid derived_refid = insertRefid(bcd->classDef->getOutputFileBase());
+      struct Refid base_refid = insertRefid(cd->getOutputFileBase());
+      bindIntParameter(compoundref_insert,":base_refid", base_refid.rowid);
+      bindIntParameter(compoundref_insert,":derived_refid", derived_refid.rowid);
+      bindIntParameter(compoundref_insert,":prot",bcd->prot);
+      bindIntParameter(compoundref_insert,":virt",bcd->virt);
+      step(compoundref_insert);
     }
   }
 
