@@ -1556,9 +1556,9 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   }
 
   // +Brief, detailed and inbody description
-  bindTextParameter(memberdef_insert,":briefdescription",md->briefDescription(),FALSE);
-  bindTextParameter(memberdef_insert,":detaileddescription",md->documentation(),FALSE);
-  bindTextParameter(memberdef_insert,":inbodydescription",md->inbodyDocumentation(),FALSE);
+  getSQLDesc(memberdef_insert,":briefdescription",md->briefDescription(),md);
+  getSQLDesc(memberdef_insert,":detaileddescription",md->documentation(),md);
+  getSQLDesc(memberdef_insert,":inbodydescription",md->inbodyDocumentation(),md);
 
   // File location
   if (md->getDefLine() != -1)
