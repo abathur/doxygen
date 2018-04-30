@@ -1656,6 +1656,47 @@ static void generateSqlite3Section( const Definition *d,
   }
 }
 
+static void associateAllMembers(const ClassDef *cd)
+{
+  if (cd->memberNameInfoSDict())
+  {
+    struct Refid scope_refid = insertRefid(cd->getOutputFileBase());
+    MemberNameInfoSDict::Iterator mnii(*cd->memberNameInfoSDict());
+    MemberNameInfo *mni;
+    for (mnii.toFirst();(mni=mnii.current());++mnii)
+    {
+      MemberNameInfoIterator mii(*mni);
+      MemberInfo *mi;
+      for (mii.toFirst();(mi=mii.current());++mii)
+      {
+        const MemberDef *md=mi->memberDef;
+        if (md->name().at(0)!='@') // skip anonymous members
+        {
+          Protection prot = mi->prot;
+          Specifier virt=md->virtualness();
+          /* start preparing to insert */
+          QCString qmember_refid = md->getOutputFileBase() + "_1" +
+            md->anchor();
+
+
+          struct Refid member_refid = insertRefid(qmember_refid);
+
+          bindIntParameter(member_insert, ":scope_refid", scope_refid.rowid);
+          bindIntParameter(member_insert, ":memberdef_refid", member_refid.rowid);
+
+          bindIntParameter(member_insert, ":prot", md->protection());
+          bindIntParameter(member_insert, ":virt", md->virtualness());
+
+          if (!mi->ambiguityResolutionScope.isEmpty())
+          {
+            bindTextParameter(member_insert, ":ambiguityscope", mi->ambiguityResolutionScope);
+          }
+          step(member_insert);
+        }
+      }
+    }
+  }
+}
 
 static void generateSqlite3ForClass(const ClassDef *cd)
 {
@@ -1783,6 +1824,7 @@ static void generateSqlite3ForClass(const ClassDef *cd)
       generateSqlite3Section(cd,ml,"user-defined");//g_xmlSectionMapper.find(ml->listType()));
     }
   }
+  associateAllMembers(cd);
 }
 
 static void generateSqlite3ForNamespace(const NamespaceDef *nd)
