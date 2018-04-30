@@ -28,6 +28,7 @@
 #include "config.h"
 #include "util.h"
 #include "outputlist.h"
+#include "docparser.h"
 #include "language.h"
 
 #include "dot.h"
