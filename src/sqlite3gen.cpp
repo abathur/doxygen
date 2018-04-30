@@ -2118,7 +2118,77 @@ static void generateSqlite3ForDir(const DirDef *dd)
 // kinds of compound: class, struct, union, interface, protocol, category, exception, service, singleton, module, type, file, namespace, group, page, example, dir
 static void generateSqlite3ForPage(const PageDef *pd,bool isExample)
 {
-#warning WorkInProgress
+  // + name
+  // + title
+  // + brief description
+  // + documentation (detailed description)
+  // + inbody documentation
+  // + sub pages
+  if (pd->isReference())        return; // skip external references.
+
+  //QCString kindName = isExample ? "example" : "page";
+  QCString qrefid = pd->getOutputFileBase();
+  if (pd->getGroupDef())
+  {
+    qrefid+=(QCString)"_"+pd->name();
+  }
+  if (qrefid=="index") qrefid="indexpage"; // to prevent overwriting the generated index page.
+
+  struct Refid refid = insertRefid(qrefid);
+  if(!refid.created && compounddefExists(refid)){return;}// in theory we can omit a class that already has a refid--unless there are conditions under which we may encounter the class refid before parsing the class? Might want to create a test or assertion for this?
+
+  bindIntParameter(compounddef_insert,":rowid",refid.rowid);
+  // + name
+  bindTextParameter(compounddef_insert,":name",pd->name());
+
+  QCString title;
+  if (pd==Doxygen::mainPage) // main page is special
+  {
+    if (!pd->title().isEmpty() && pd->title().lower()!="notitle")
+    {
+
+      title = filterTitle(convertCharEntitiesToUTF8(Doxygen::mainPage->title()));
+    }
+    else
+    {
+      title = Config_getString(PROJECT_NAME);
+    }
+  }
+  else
+  {
+    SectionInfo *si = Doxygen::sectionDict->find(pd->name());
+    if (si)
+    {
+
+      title = si->title;
+    }
+
+    if(!title){title = pd->title();}
+  }
+
+  // + title
+  bindTextParameter(compounddef_insert,":title",title,FALSE);
+
+  bindTextParameter(compounddef_insert,":kind", "page");
+
+  int id_file = insertFile(stripFromPath(pd->getDefFileName()));
+
+  bindIntParameter(compounddef_insert,":id_file",id_file);
+  bindIntParameter(compounddef_insert,":line",pd->getDefLine());
+  bindIntParameter(compounddef_insert,":column",pd->getDefColumn());
+
+  // + brief description
+  getSQLDesc(compounddef_insert,":briefdescription",pd->briefDescription(),pd);
+  // + documentation (detailed description)
+  getSQLDesc(compounddef_insert,":detaileddescription",pd->documentation(),pd);
+
+  step(compounddef_insert);
+  // + sub pages
+  writeInnerPages(pd->getSubPages(),refid);
+
+  // TODO: xml gen handles this slightly differently if isExample; do we need to differ here?
+  //bindTextParameter(compounddef_insert,":refid",bcd->classDef->getOutputFileBase(),FALSE);
+  //isExample
 }
 
 
