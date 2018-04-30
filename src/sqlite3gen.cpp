@@ -1698,22 +1698,23 @@ static void associateAllMembers(const ClassDef *cd)
   }
 }
 
+// NOTE: using "x" as a marker for items that sqlite3 is missing and XML *claims* to be including. Treat the XML with some skepticism.
 static void generateSqlite3ForClass(const ClassDef *cd)
 {
+  // + brief description
+  // + detailed description
+  // + template argument list(s)
+  // + include file
+  // + member groups
+  // x inheritance DOT diagram
   // + list of direct super classes
   // + list of direct sub classes
-  // + include file
   // + list of inner classes
-  // - template argument list(s)
-  // + member groups
+  // x collaboration DOT diagram
   // + list of all members
-  // - brief description
-  // - detailed description
-  // - inheritance DOT diagram
-  // - collaboration DOT diagram
-  // - user defined member sections
-  // - standard member sections
-  // - detailed member documentation
+  // x user defined member sections
+  // x standard member sections
+  // x detailed member documentation
   // - examples using the class
 
   if (cd->isReference())        return; // skip external references.
@@ -1722,11 +1723,14 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   if (cd->templateMaster()!=0)  return; // skip generated template instances.
 
   msg("Generating Sqlite3 output for class %s\n",cd->name().data());
+
   struct Refid refid = insertRefid(cd->getOutputFileBase());
   if(!refid.created && compounddefExists(refid)){return;}// in theory we can omit a class that already has a refid--unless there are conditions under which we may encounter the class refid before parsing the class? Might want to create a test or assertion for this?
+
   bindIntParameter(compounddef_insert,":rowid", refid.rowid);
 
   bindTextParameter(compounddef_insert,":name",cd->name());
+  bindTextParameter(compounddef_insert,":title",cd->title(), FALSE);
   bindTextParameter(compounddef_insert,":kind",cd->compoundTypeString(),FALSE);
   bindIntParameter(compounddef_insert,":prot",cd->protection());
 
@@ -1734,6 +1738,9 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   bindIntParameter(compounddef_insert,":id_file",id_file);
   bindIntParameter(compounddef_insert,":line",cd->getDefLine());
   bindIntParameter(compounddef_insert,":column",cd->getDefColumn());
+
+  getSQLDesc(compounddef_insert,":briefdescription",cd->briefDescription(),cd);
+  getSQLDesc(compounddef_insert,":detaileddescription",cd->documentation(),cd);
 
   step(compounddef_insert);
 
@@ -1796,9 +1803,9 @@ static void generateSqlite3ForClass(const ClassDef *cd)
     }
   }
   // + list of inner classes
-  writeInnerClasses(cd->getClassSDict());
+  writeInnerClasses(cd->getClassSDict(),refid);
 
-  // - template argument list(s)
+  // + template argument list(s)
   writeTemplateList(cd);
 
   // + member groups
