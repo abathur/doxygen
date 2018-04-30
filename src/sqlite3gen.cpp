@@ -843,8 +843,8 @@ static void insertMemberReference(const MemberDef *src, const MemberDef *dst)
   QCString qsrc_refid = src->getOutputFileBase() + "_1" + src->anchor();
   if (dst->getStartBodyLine()!=-1 && dst->getBodyDef())
   {
-    struct Refid src_refid = insertRefid(qsrc_refid.data());
-    struct Refid dst_refid = insertRefid(qdst_refid.data());
+    struct Refid src_refid = insertRefid(qsrc_refid);
+    struct Refid dst_refid = insertRefid(qdst_refid);
     insertMemberReference(src_refid,dst_refid);
   }
 }
@@ -864,8 +864,8 @@ static void insertMemberFunctionParams(int id_memberdef, const MemberDef *md, co
 
       if (!a->attrib.isEmpty())
       {
-        bindTextParameter(params_select,":attributes",a->attrib.data());
-        bindTextParameter(params_insert,":attributes",a->attrib.data());
+        bindTextParameter(params_select,":attributes",a->attrib);
+        bindTextParameter(params_insert,":attributes",a->attrib);
       }
       if (!a->type.isEmpty())
       {
@@ -877,35 +877,35 @@ static void insertMemberFunctionParams(int id_memberdef, const MemberDef *md, co
         while ((s=li.current()))
         {
           QCString qsrc_refid = md->getOutputFileBase() + "_1" + md->anchor();
-          struct Refid src_refid = insertRefid(qsrc_refid.data());
+          struct Refid src_refid = insertRefid(qsrc_refid);
           struct Refid dst_refid = insertRefid(s->data());
           insertMemberReference(src_refid,dst_refid);
           ++li;
         }
-        bindTextParameter(params_select,":type",a->type.data());
-        bindTextParameter(params_insert,":type",a->type.data());
+        bindTextParameter(params_select,":type",a->type);
+        bindTextParameter(params_insert,":type",a->type);
       }
       if (!a->name.isEmpty())
       {
-        bindTextParameter(params_select,":declname",a->name.data());
-        bindTextParameter(params_insert,":declname",a->name.data());
+        bindTextParameter(params_select,":declname",a->name);
+        bindTextParameter(params_insert,":declname",a->name);
       }
       if (defArg && !defArg->name.isEmpty() && defArg->name!=a->name)
       {
-        bindTextParameter(params_select,":defname",defArg->name.data());
-        bindTextParameter(params_insert,":defname",defArg->name.data());
+        bindTextParameter(params_select,":defname",defArg->name);
+        bindTextParameter(params_insert,":defname",defArg->name);
       }
       if (!a->array.isEmpty())
       {
-        bindTextParameter(params_select,":array",a->array.data());
-        bindTextParameter(params_insert,":array",a->array.data());
+        bindTextParameter(params_select,":array",a->array);
+        bindTextParameter(params_insert,":array",a->array);
       }
       if (!a->defval.isEmpty())
       {
         StringList l;
         linkifyText(TextGeneratorSqlite3Impl(l),def,md->getBodyDef(),md,a->defval);
-        bindTextParameter(params_select,":defval",a->defval.data());
-        bindTextParameter(params_insert,":defval",a->defval.data());
+        bindTextParameter(params_select,":defval",a->defval);
+        bindTextParameter(params_insert,":defval",a->defval);
       }
       if (defArg) ++defAli;
 
@@ -938,7 +938,7 @@ static void insertMemberDefineParams(int id_memberdef,const MemberDef *md, const
       Argument *a;
       for (ali.toFirst();(a=ali.current());++ali)
       {
-        bindTextParameter(params_insert,":defname",a->type.data());
+        bindTextParameter(params_insert,":defname",a->type);
         int id_param=step(params_insert,TRUE);
         if (id_param==-1) {
           msg("error INSERT param(%s) failed\n", a->type.data());
@@ -1106,12 +1106,12 @@ static void writeInnerPages(const PageSDict *pl, struct Refid outer_refid)
   const PageDef *pd;
   for (pli.toFirst();(pd=pli.current());++pli)
   {
-    struct Refid inner_refid = insertRefid(pd->getGroupDef() ? pd->getOutputFileBase()+"_"+pd->name().data() : pd->getOutputFileBase());
+    struct Refid inner_refid = insertRefid(pd->getGroupDef() ? pd->getOutputFileBase()+"_"+pd->name() : pd->getOutputFileBase());
 
     bindIntParameter(innerpage_insert,":inner_refid", inner_refid.rowid);
     bindIntParameter(innerpage_insert,":outer_refid", outer_refid.rowid);
 
-    bindTextParameter(innerpage_insert,":name",pd->name().data(),FALSE);
+    bindTextParameter(innerpage_insert,":name",pd->name(),FALSE);
     step(innerpage_insert);
 
   }
@@ -1147,7 +1147,7 @@ static void writeInnerFiles(const FileList *fl, struct Refid outer_refid)
 
       bindIntParameter(innerfile_insert,":inner_refid", inner_refid.rowid);
       bindIntParameter(innerfile_insert,":outer_refid", outer_refid.rowid);
-      bindTextParameter(innerfile_insert,":name",fd->name().data(),FALSE);
+      bindTextParameter(innerfile_insert,":name",fd->name(),FALSE);
       step(innerfile_insert);
     }
   }
@@ -1165,7 +1165,7 @@ static void writeInnerDirs(const DirList *dl, struct Refid outer_refid)
 
       bindIntParameter(innerdir_insert,":inner_refid", inner_refid.rowid);
       bindIntParameter(innerdir_insert,":outer_refid", outer_refid.rowid);
-      bindTextParameter(innerdir_insert,":name",subdir->displayName().data(),FALSE);
+      bindTextParameter(innerdir_insert,":name",subdir->displayName(),FALSE);
       step(innerdir_insert);
     }
   }
@@ -1185,6 +1185,7 @@ static void writeInnerNamespaces(const NamespaceSDict *nl, struct Refid outer_re
 
         bindIntParameter(innernamespace_insert,":inner_refid",inner_refid.rowid);
         bindIntParameter(innernamespace_insert,":outer_refid",outer_refid.rowid);
+        bindTextParameter(innernamespace_insert,":name",nd->name(),FALSE);
         step(innernamespace_insert);
       }
     }
@@ -1305,7 +1306,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 
   // memberdef
   QCString qrefid = md->getOutputFileBase() + "_1" + md->anchor();
-  struct Refid refid = insertRefid(qrefid.data());
+  struct Refid refid = insertRefid(qrefid);
 
   /* TODO: not 100% certain this is safe for all memberdef types */
   if(!refid.created && memberdefExists(refid) && memberdefIncomplete(refid, md)) // compacting duplicate defs
@@ -1486,7 +1487,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   {
     QCString qreimplemented_refid = rmd->getOutputFileBase() + "_1" + rmd->anchor();
 
-    struct Refid reimplemented_refid = insertRefid(qreimplemented_refid.data());
+    struct Refid reimplemented_refid = insertRefid(qreimplemented_refid);
 
     bindIntParameter(reimplements_insert,":memberdef_refid", refid.rowid);
     bindIntParameter(reimplements_insert,":reimplemented_refid", reimplemented_refid.rowid);
@@ -1506,9 +1507,9 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     stripQualifiers(typeStr);
     StringList l;
     linkifyText(TextGeneratorSqlite3Impl(l), def, md->getBodyDef(),md,typeStr);
-    if (typeStr.data())
+    if (typeStr)
     {
-      bindTextParameter(memberdef_insert,":type",typeStr.data(),FALSE);
+      bindTextParameter(memberdef_insert,":type",typeStr,FALSE);
     }
 
     if (md->definition())
@@ -1527,7 +1528,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   // Extract references from initializer
   if (md->hasMultiLineInitializer() || md->hasOneLineInitializer())
   {
-    bindTextParameter(memberdef_insert,":initializer",md->initializer().data());
+    bindTextParameter(memberdef_insert,":initializer",md->initializer());
 
     StringList l;
     linkifyText(TextGeneratorSqlite3Impl(l),def,md->getBodyDef(),md,md->initializer());
@@ -1538,12 +1539,12 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
       if (md->getBodyDef())
       {
         DBG_CTX(("initializer:%s %s %s %d\n",
-              md->anchor().data(),
+              md->anchor(),
               s->data(),
-              md->getBodyDef()->getDefFileName().data(),
+              md->getBodyDef()->getDefFileName(),
               md->getStartBodyLine()));
         QCString qsrc_refid = md->getOutputFileBase() + "_1" + md->anchor();
-        struct Refid src_refid = insertRefid(qsrc_refid.data());
+        struct Refid src_refid = insertRefid(qsrc_refid);
         struct Refid dst_refid = insertRefid(s->data());
         insertMemberReference(src_refid,dst_refid);
       }
@@ -1553,7 +1554,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 
   if ( md->getScopeString() )
   {
-    bindTextParameter(memberdef_insert,":scope",md->getScopeString().data(),FALSE);
+    bindTextParameter(memberdef_insert,":scope",md->getScopeString(),FALSE);
   }
 
   // +Brief, detailed and inbody description
@@ -1938,8 +1939,8 @@ static void generateSqlite3ForFile(const FileDef *fd)
     QListIterator<IncludeInfo> ili(*fd->includeFileList());
     for (ili.toFirst();(ii=ili.current());++ili)
     {
-      int src_id=insertFile(stripFromPath(fd->absFilePath().data()));
-      int dst_id=insertFile(stripFromPath(ii->includeName.data()));
+      int src_id=insertFile(stripFromPath(fd->absFilePath()));
+      int dst_id=insertFile(stripFromPath(ii->includeName));
       bindIntParameter(incl_select,":local",ii->local);
       bindIntParameter(incl_select,":src_id",src_id);
       bindIntParameter(incl_select,":dst_id",dst_id);
