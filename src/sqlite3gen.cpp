@@ -2009,7 +2009,75 @@ static void generateSqlite3ForFile(const FileDef *fd)
 
 static void generateSqlite3ForGroup(const GroupDef *gd)
 {
-#warning WorkInProgress
+  // + members
+  // + member groups
+  // + files
+  // + classes
+  // + namespaces
+  // - packages
+  // + pages
+  // + child groups
+  // - examples
+  // + brief description
+  // + detailed description
+
+  if (gd->isReference())        return; // skip external references.
+
+  struct Refid refid = insertRefid(gd->getOutputFileBase());
+  if(!refid.created && compounddefExists(refid)){return;}
+  bindIntParameter(compounddef_insert,":rowid", refid.rowid);
+
+  bindTextParameter(compounddef_insert,":name",gd->name());
+  bindTextParameter(compounddef_insert,":title",gd->groupTitle(), FALSE);
+  bindTextParameter(compounddef_insert,":kind","group",FALSE);
+
+  int id_file = insertFile(stripFromPath(gd->getDefFileName()));
+  bindIntParameter(compounddef_insert,":id_file",id_file);
+  bindIntParameter(compounddef_insert,":line",gd->getDefLine());
+  bindIntParameter(compounddef_insert,":column",gd->getDefColumn());
+
+  getSQLDesc(compounddef_insert,":briefdescription",gd->briefDescription(),gd);
+  getSQLDesc(compounddef_insert,":detaileddescription",gd->documentation(),gd);
+
+  step(compounddef_insert);
+
+  // + files
+  writeInnerFiles(gd->getFiles(),refid);
+
+  // + classes
+  writeInnerClasses(gd->getClasses(),refid);
+
+  // + namespaces
+  writeInnerNamespaces(gd->getNamespaces(),refid);
+
+  // + pages
+  writeInnerPages(gd->getPages(),refid);
+
+  // + groups
+  writeInnerGroups(gd->getSubGroups(),refid);
+
+  // + member groups
+  if (gd->getMemberGroupSDict())
+  {
+    MemberGroupSDict::Iterator mgli(*gd->getMemberGroupSDict());
+    MemberGroup *mg;
+    for (;(mg=mgli.current());++mgli)
+    {
+      generateSqlite3Section(gd,mg->members(),"user-defined",mg->header(),
+          mg->documentation());
+    }
+  }
+
+  // + members
+  QListIterator<MemberList> mli(gd->getMemberLists());
+  MemberList *ml;
+  for (mli.toFirst();(ml=mli.current());++mli)
+  {
+    if ((ml->listType()&MemberListType_declarationLists)!=0)
+    {
+      generateSqlite3Section(gd,ml,"user-defined");
+    }
+  }
 }
 
 static void generateSqlite3ForDir(const DirDef *dd)
