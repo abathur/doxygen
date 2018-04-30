@@ -27,7 +27,7 @@
 #include "xmldocvisitor.h"
 #include "config.h"
 #include "util.h"
-#include "docparser.h"
+#include "outputlist.h"
 #include "language.h"
 
 #include "dot.h"
@@ -37,8 +37,11 @@
 #include "namespacedef.h"
 #include "filename.h"
 #include "groupdef.h"
+#include "membername.h"
+#include "memberdef.h"
 #include "pagedef.h"
 #include "dirdef.h"
+#include "section.h"
 
 #include <qdir.h>
 #include <string.h>
