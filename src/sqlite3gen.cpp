@@ -1898,19 +1898,37 @@ static void generateSqlite3ForFile(const FileDef *fd)
 {
   // + includes files
   // + includedby files
-  // - include graph
-  // - included by graph
+  // x include graph
+  // x included by graph
   // + contained class definitions
   // + contained namespace definitions
   // + member groups
   // + normal members
-  // - brief desc
-  // - detailed desc
-  // - source code
-  // - location
+  // + brief desc
+  // + detailed desc
+  // x source code
+  // + location (id_file, line, column)
   // - number of lines
 
   if (fd->isReference()) return; // skip external references
+
+  struct Refid refid = insertRefid(fd->getOutputFileBase());
+  if(!refid.created && compounddefExists(refid)){return;}
+  bindIntParameter(compounddef_insert,":rowid", refid.rowid);
+
+  bindTextParameter(compounddef_insert,":name",fd->name(),FALSE);
+  bindTextParameter(compounddef_insert,":title",fd->title(),FALSE);
+  bindTextParameter(compounddef_insert,":kind","file",FALSE);
+
+  int id_file = insertFile(stripFromPath(fd->getDefFileName()));
+  bindIntParameter(compounddef_insert,":id_file",id_file);
+  bindIntParameter(compounddef_insert,":line",fd->getDefLine());
+  bindIntParameter(compounddef_insert,":column",fd->getDefColumn());
+
+  getSQLDesc(compounddef_insert,":briefdescription",fd->briefDescription(),fd);
+  getSQLDesc(compounddef_insert,":detaileddescription",fd->documentation(),fd);
+
+  step(compounddef_insert);
 
   // + includes files
   IncludeInfo *ii;
@@ -1956,13 +1974,13 @@ static void generateSqlite3ForFile(const FileDef *fd)
   // + contained class definitions
   if (fd->getClassSDict())
   {
-    writeInnerClasses(fd->getClassSDict());
+    writeInnerClasses(fd->getClassSDict(),refid);
   }
 
   // + contained namespace definitions
   if (fd->getNamespaceSDict())
   {
-    writeInnerNamespaces(fd->getNamespaceSDict());
+    writeInnerNamespaces(fd->getNamespaceSDict(),refid);
   }
 
   // + member groups
