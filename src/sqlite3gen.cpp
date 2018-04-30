@@ -839,14 +839,13 @@ static bool insertMemberReference(struct Refid src_refid, struct Refid dst_refid
 
 static void insertMemberReference(const MemberDef *src, const MemberDef *dst)
 {
-  QCString qrefid_dst = dst->getOutputFileBase() + "_1" + dst->anchor();
-  QCString qrefid_src = src->getOutputFileBase() + "_1" + src->anchor();
+  QCString qdst_refid = dst->getOutputFileBase() + "_1" + dst->anchor();
+  QCString qsrc_refid = src->getOutputFileBase() + "_1" + src->anchor();
   if (dst->getStartBodyLine()!=-1 && dst->getBodyDef())
   {
-    int refid_src = insertRefid(qrefid_src.data());
-    int refid_dst = insertRefid(qrefid_dst.data());
-    int id_file = insertFile("no-file"); // TODO: replace no-file with proper file
-    insertMemberReference(refid_src,refid_dst,id_file,dst->getStartBodyLine(),-1);
+    struct Refid src_refid = insertRefid(qsrc_refid.data());
+    struct Refid dst_refid = insertRefid(qdst_refid.data());
+    insertMemberReference(src_refid,dst_refid);
   }
 }
 
@@ -877,11 +876,10 @@ static void insertMemberFunctionParams(int id_memberdef, const MemberDef *md, co
         QCString *s;
         while ((s=li.current()))
         {
-          QCString qrefid_src = md->getOutputFileBase() + "_1" + md->anchor();
-          int refid_src = insertRefid(qrefid_src.data());
-          int refid_dst = insertRefid(s->data());
-          int id_file = insertFile(stripFromPath(def->getDefFileName()));
-          insertMemberReference(refid_src,refid_dst,id_file,md->getDefLine(),-1);
+          QCString qsrc_refid = md->getOutputFileBase() + "_1" + md->anchor();
+          struct Refid src_refid = insertRefid(qsrc_refid.data());
+          struct Refid dst_refid = insertRefid(s->data());
+          insertMemberReference(src_refid,dst_refid);
           ++li;
         }
         bindTextParameter(params_select,":type",a->type.data());
