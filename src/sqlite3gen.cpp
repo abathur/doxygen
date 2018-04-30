@@ -1840,18 +1840,35 @@ static void generateSqlite3ForNamespace(const NamespaceDef *nd)
   // + contained namespace definitions
   // + member groups
   // + normal members
-  // - brief desc
-  // - detailed desc
-  // - location
+  // + brief desc
+  // + detailed desc
+  // + location (id_file, line, column)
   // - files containing (parts of) the namespace definition
 
   if (nd->isReference() || nd->isHidden()) return; // skip external references
+  struct Refid refid = insertRefid(nd->getOutputFileBase());
+  if(!refid.created && compounddefExists(refid)){return;}
+  bindIntParameter(compounddef_insert,":rowid", refid.rowid);
+
+  bindTextParameter(compounddef_insert,":name",nd->name());
+  bindTextParameter(compounddef_insert,":title",nd->title(), FALSE);
+  bindTextParameter(compounddef_insert,":kind","namespace",FALSE);
+
+  int id_file = insertFile(stripFromPath(nd->getDefFileName()));
+  bindIntParameter(compounddef_insert,":id_file",id_file);
+  bindIntParameter(compounddef_insert,":line",nd->getDefLine());
+  bindIntParameter(compounddef_insert,":column",nd->getDefColumn());
+
+  getSQLDesc(compounddef_insert,":briefdescription",nd->briefDescription(),nd);
+  getSQLDesc(compounddef_insert,":detaileddescription",nd->documentation(),nd);
+
+  step(compounddef_insert);
 
   // + contained class definitions
-  writeInnerClasses(nd->getClassSDict());
+  writeInnerClasses(nd->getClassSDict(),refid);
 
   // + contained namespace definitions
-  writeInnerNamespaces(nd->getNamespaceSDict());
+  writeInnerNamespaces(nd->getNamespaceSDict(),refid);
 
   // + member groups
   if (nd->getMemberGroupSDict())
