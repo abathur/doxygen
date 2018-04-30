@@ -1281,11 +1281,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 {
   // + declaration/definition arg lists
   // + reimplements
-  // NOTE: This erroneously claimed from the first commit that it covered reimplements, reimplementedBy & exceptions
   // + reimplementedBy
-  // - reimplements
-  // + exceptions
-  // - reimplementedBy
   // - exceptions
   // + const/volatile specifiers
   // - examples
@@ -1482,6 +1478,18 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     bindIntParameter(memberdef_insert,":addable",md->isAddable());
     bindIntParameter(memberdef_insert,":removable",md->isRemovable());
     bindIntParameter(memberdef_insert,":raisable",md->isRaisable());
+  }
+
+  const MemberDef *rmd = md->reimplements();
+  if(rmd)
+  {
+    QCString qreimplemented_refid = rmd->getOutputFileBase() + "_1" + rmd->anchor();
+
+    struct Refid reimplemented_refid = insertRefid(qreimplemented_refid.data());
+
+    bindIntParameter(reimplements_insert,":memberdef_refid", refid.rowid);
+    bindIntParameter(reimplements_insert,":reimplemented_refid", reimplemented_refid.rowid);
+    step(reimplements_insert,TRUE);
   }
 
   // + declaration/definition arg lists
