@@ -23,6 +23,8 @@
 #include "qtbc.h"
 #include "sqlite3gen.h"
 #include "doxygen.h"
+#include "xmlgen.h"
+#include "xmldocvisitor.h"
 #include "config.h"
 #include "util.h"
 #include "docparser.h"
@@ -1137,6 +1139,42 @@ static void writeMemberTemplateLists(const MemberDef *md)
 static void writeTemplateList(const ClassDef *cd)
 {
   writeTemplateArgumentList(cd->templateArguments(),cd,0);
+}
+
+QCString getSQLDocBlock(const Definition *scope,
+  const Definition *def,
+  const QCString &doc,
+  const QCString &fileName,
+  int lineNr)
+{
+  QGString s;
+  if (doc.isEmpty()) return s.data();
+  FTextStream t(&s);
+  DocNode *root = validatingParseDoc(fileName,lineNr,const_cast<Definition*>(scope),const_cast<MemberDef*>(reinterpret_cast<const MemberDef*>(def)),doc,FALSE,FALSE);
+  XMLCodeGenerator codeGen(t);
+  // create a parse tree visitor for XML
+  XmlDocVisitor *visitor = new XmlDocVisitor(t,codeGen);
+  root->accept(visitor);
+  delete visitor;
+  delete root;
+  QCString result = convertCharEntitiesToUTF8(s.data());
+  return result.data();
+}
+
+static void getSQLDesc(SqlStmt &s,const char *col,const char *value,const Definition *def)
+{
+  bindTextParameter(
+    s,
+    col,
+      getSQLDocBlock(
+        def->getOuterScope(),
+        def,
+        value,
+        def->docFile(),
+        def->docLine()
+      ),
+      FALSE
+    );
 }
 ////////////////////////////////////////////
 
