@@ -153,7 +153,8 @@ const char * table_schema[][2] = {
       "\tstatic               INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\tconst                INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\texplicit             INTEGER DEFAULT 0, -- 0:no 1:yes\n"
-      "\tinline               INTEGER DEFAULT 0, -- 0:no 1:yes\n"
+      // 2:both below used after we have encountered both member forms
+      "\tinline               INTEGER DEFAULT 0, -- 0:no 1:yes 2:both\n"
       "\tfinal                INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\tsealed               INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\tnew                  INTEGER DEFAULT 0, -- 0:no 1:yes\n"
@@ -602,6 +603,29 @@ SqlStmt memberdef_insert={"INSERT INTO memberdef "
     ")"
     ,NULL
 };
+/* We have a slightly different need than the XML here. The XML can have two memberdef nodes with the same refid to document the declaration and the definition. This doesn't play very nice with a referential model. It isn't a big issue if only one is documented, but in case both are, we'll fall back on this kludge to combine them in a single row... */
+SqlStmt memberdef_update_decl={"UPDATE memberdef SET "
+      "inline = :inline,"
+      "id_file = :id_file,"
+      "line = :line,"
+      "column = :column,"
+      "detaileddescription = 'Declaration: ' || :detaileddescription || 'Definition: ' || detaileddescription,"
+      "briefdescription = 'Declaration: ' || :briefdescription || 'Definition: ' || briefdescription,"
+      "inbodydescription = 'Declaration: ' || :inbodydescription || 'Definition: ' || inbodydescription"
+      " WHERE rowid = :rowid"
+    ,NULL
+};
+SqlStmt memberdef_update_def={"UPDATE memberdef SET "
+      "inline = :inline,"
+      "bodystart = :bodystart,"
+      "bodyend = :bodyend,"
+      "id_bodyfile = :id_bodyfile,"
+      "detaileddescription = 'Declaration: ' || detaileddescription || 'Definition: ' || :detaileddescription,"
+      "briefdescription = 'Declaration: ' || briefdescription || 'Definition: ' || :briefdescription,"
+      "inbodydescription = 'Declaration: ' || inbodydescription || 'Definition: ' || :inbodydescription"
+      " WHERE rowid = :rowid"
+    ,NULL
+};
 //////////////////////////////////////////////////////
 SqlStmt member_insert={"INSERT INTO member "
     "( scope_refid, memberdef_refid, prot, virt, ambiguityscope ) "
@@ -961,6 +985,8 @@ static int prepareStatements(sqlite3 *db)
   -1==prepareStatement(db, memberdef_exists) ||
   -1==prepareStatement(db, memberdef_incomplete) ||
   -1==prepareStatement(db, memberdef_insert) ||
+  -1==prepareStatement(db, memberdef_update_def) ||
+  -1==prepareStatement(db, memberdef_update_decl) ||
   -1==prepareStatement(db, member_insert) ||
   -1==prepareStatement(db, files_insert) ||
   -1==prepareStatement(db, files_select) ||
@@ -1210,7 +1236,87 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 
   // memberdef
   QCString qrefid = md->getOutputFileBase() + "_1" + md->anchor();
-  int refid = insertRefid(qrefid.data());
+  struct Refid refid = insertRefid(qrefid.data());
+
+  /* TODO: not 100% certain this is safe for all memberdef types */
+  if(!refid.created && memberdefExists(refid) && memberdefIncomplete(refid, md)) // compacting duplicate defs
+  {
+    /*
+    NOTE: For performance, ideal condition is that we *don't process* a member we've alread added. Unfortunately, we can have two memberdefs with the same refid documenting the declaration and definition. The old process, because of this hitch, would "update" an already-complete member when different inheritance paths lead back to the same refid. memberdefIncomplete uses the 'inline' value to figure this out. Once we get to this process, we should *only* be seeing the *other* type of def/decl, so we'll set inline to a new value (2), indicating that this entry covers both inline types.
+    */
+    struct SqlStmt memberdef_update;
+
+    // definitions have bodyfile/start/end
+    if (md->getStartBodyLine()!=-1)
+    {
+      memberdef_update = memberdef_update_def;
+      int id_bodyfile = insertFile(stripFromPath(md->getBodyDef()->absFilePath()));
+      if (id_bodyfile == -1)
+      {
+          sqlite3_clear_bindings(memberdef_update.stmt);
+      }
+      else
+      {
+          bindIntParameter(memberdef_update,":id_bodyfile",id_bodyfile);
+          bindIntParameter(memberdef_update,":bodystart",md->getStartBodyLine());
+          bindIntParameter(memberdef_update,":bodyend",md->getEndBodyLine());
+      }
+    }
+    // declarations don't
+    else
+    {
+      memberdef_update = memberdef_update_decl;
+      if (md->getDefLine() != -1)
+      {
+        int id_file = insertFile(stripFromPath(md->getDefFileName()));
+        if (id_file!=-1)
+        {
+          bindIntParameter(memberdef_update,":id_file",id_file);
+          bindIntParameter(memberdef_update,":line",md->getDefLine());
+          bindIntParameter(memberdef_update,":column",md->getDefColumn());
+        }
+      }
+    }
+
+    bindIntParameter(memberdef_update, ":rowid", refid.rowid);
+    bindIntParameter(memberdef_update,":inline", 2); // value 2 indicates we've seen "both" inline types.
+
+    /* in case both are used, append/prepend descriptions */
+    getSQLDesc(memberdef_update,":briefdescription",md->briefDescription(),md);
+    getSQLDesc(memberdef_update,":detaileddescription",md->documentation(),md);
+    getSQLDesc(memberdef_update,":inbodydescription",md->inbodyDocumentation(),md);
+
+    step(memberdef_update,TRUE);
+
+    //I don't think we need to repeat the params.
+
+    // TODO: probably worth turning this copypasta into a function to dedupe. I think we can't really know which duplicate will/won't have references to/from, so we'll repeat this out of caution.
+    // + source references
+    // The cross-references in initializers only work when both the src and dst
+    // are defined.
+    MemberSDict *mdict = md->getReferencesMembers();
+    if (mdict!=0)
+    {
+      MemberSDict::IteratorDict mdi(*mdict);
+      const MemberDef *rmd;
+      for (mdi.toFirst();(rmd=mdi.current());++mdi)
+      {
+        insertMemberReference(md,rmd);
+      }
+    }
+    // + source referenced by
+    mdict = md->getReferencedByMembers();
+    if (mdict!=0)
+    {
+      MemberSDict::IteratorDict mdi(*mdict);
+      const MemberDef *rmd;
+      for (mdi.toFirst();(rmd=mdi.current());++mdi)
+      {
+        insertMemberReference(rmd,md);
+      }
+    }
+    return; //TODO: may be worth breaking up into functions
+  }
 
   bindIntParameter(memberdef_insert,":rowid", refid.rowid);
   bindTextParameter(memberdef_insert,":kind",md->memberTypeName(),FALSE);
