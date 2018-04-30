@@ -226,11 +226,14 @@ const char * table_schema[][2] = {
       "\t-- class/struct definitions.\n"
       "\trowid                INTEGER PRIMARY KEY NOT NULL,\n"
       "\tname                 TEXT NOT NULL,\n"
+      "\ttitle                TEXT,\n"
       "\tkind                 TEXT NOT NULL,\n"
       "\tprot                 INTEGER,\n"
       "\tid_file              INTEGER NOT NULL,\n"
       "\tline                 INTEGER NOT NULL,\n"
       "\tcolumn               INTEGER NOT NULL,\n"
+      "\tdetaileddescription  TEXT,\n"
+      "\tbriefdescription     TEXT,\n"
       "\tFOREIGN KEY (rowid) REFERENCES refids (rowid)\n"
       ");"
   },
@@ -606,9 +609,9 @@ SqlStmt member_insert={"INSERT INTO member "
 };
 //////////////////////////////////////////////////////
 SqlStmt compounddef_insert={"INSERT INTO compounddef "
-    "( rowid, name, kind, prot, id_file, line, column ) "
+    "( rowid, name, title, kind, prot, id_file, line, column, briefdescription, detaileddescription ) "
     "VALUES "
-    "(:rowid, :name,:kind,:prot,:id_file,:line,:column )"
+    "(:rowid, :name,:title,:kind,:prot,:id_file,:line,:column,:briefdescription,:detaileddescription )"
     ,NULL
 };
 SqlStmt compounddef_exists={"SELECT EXISTS (SELECT * FROM compounddef WHERE rowid = :rowid)"
