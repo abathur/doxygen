@@ -2082,7 +2082,36 @@ static void generateSqlite3ForGroup(const GroupDef *gd)
 
 static void generateSqlite3ForDir(const DirDef *dd)
 {
-#warning WorkInProgress
+  // TODO: should there be more here? the matching function in xmlgen doesn't have a list like this, so I'm just building it from what xmlgen DOES include (thus missing anything that could be included but isn't in xmlgen)
+  // + dirs
+  // + files
+  // + briefdescription
+  // + detaileddescription
+  // + location (cleanup: I'm using id_file, line, column as usual, but XML just uses file; line/col may break or do nothing)
+  if (dd->isReference()) return; // skip external references
+
+  struct Refid refid = insertRefid(dd->getOutputFileBase());
+  if(!refid.created && compounddefExists(refid)){return;}
+  bindIntParameter(compounddef_insert,":rowid", refid.rowid);
+
+  bindTextParameter(compounddef_insert,":name",dd->displayName());
+  bindTextParameter(compounddef_insert,":kind","dir",FALSE);
+
+  int id_file = insertFile(stripFromPath(dd->getDefFileName()));
+  bindIntParameter(compounddef_insert,":id_file",id_file);
+  bindIntParameter(compounddef_insert,":line",dd->getDefLine());
+  bindIntParameter(compounddef_insert,":column",dd->getDefColumn());
+
+  getSQLDesc(compounddef_insert,":briefdescription",dd->briefDescription(),dd);
+  getSQLDesc(compounddef_insert,":detaileddescription",dd->documentation(),dd);
+
+  step(compounddef_insert);
+
+  // + files
+  writeInnerDirs(&dd->subDirs(),refid);
+
+  // + files
+  writeInnerFiles(dd->getFiles(),refid);
 }
 
 // pages are just another kind of compound
