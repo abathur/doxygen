@@ -1097,6 +1097,78 @@ static void writeInnerClasses(const ClassSDict *cl, struct Refid outer_refid)
   }
 }
 
+static void writeInnerPages(const PageSDict *pl, struct Refid outer_refid)
+{
+  if (!pl) return;
+
+  PageSDict::Iterator pli(*pl);
+  const PageDef *pd;
+  for (pli.toFirst();(pd=pli.current());++pli)
+  {
+    struct Refid inner_refid = insertRefid(pd->getGroupDef() ? pd->getOutputFileBase()+"_"+pd->name().data() : pd->getOutputFileBase());
+
+    bindIntParameter(innerpage_insert,":inner_refid", inner_refid.rowid);
+    bindIntParameter(innerpage_insert,":outer_refid", outer_refid.rowid);
+
+    bindTextParameter(innerpage_insert,":name",pd->name().data(),FALSE);
+    step(innerpage_insert);
+
+  }
+}
+
+static void writeInnerGroups(const GroupList *gl, struct Refid outer_refid)
+{
+  if (gl)
+  {
+    GroupListIterator gli(*gl);
+    const GroupDef *sgd;
+    for (gli.toFirst();(sgd=gli.current());++gli)
+    {
+      struct Refid inner_refid = insertRefid(sgd->getOutputFileBase());
+
+      bindIntParameter(innergroup_insert,":inner_refid", inner_refid.rowid);
+      bindIntParameter(innergroup_insert,":outer_refid", outer_refid.rowid);
+      bindTextParameter(innergroup_insert,":name",sgd->groupTitle(),FALSE);
+      step(innergroup_insert);
+    }
+  }
+}
+
+static void writeInnerFiles(const FileList *fl, struct Refid outer_refid)
+{
+  if (fl)
+  {
+    QListIterator<FileDef> fli(*fl);
+    const FileDef *fd;
+    for (fli.toFirst();(fd=fli.current());++fli)
+    {
+      struct Refid inner_refid = insertRefid(fd->getOutputFileBase());
+
+      bindIntParameter(innerfile_insert,":inner_refid", inner_refid.rowid);
+      bindIntParameter(innerfile_insert,":outer_refid", outer_refid.rowid);
+      bindTextParameter(innerfile_insert,":name",fd->name().data(),FALSE);
+      step(innerfile_insert);
+    }
+  }
+}
+
+static void writeInnerDirs(const DirList *dl, struct Refid outer_refid)
+{
+  if (dl)
+  {
+    QListIterator<DirDef> subdirs(*dl);
+    const DirDef *subdir;
+    for (subdirs.toFirst();(subdir=subdirs.current());++subdirs)
+    {
+      struct Refid inner_refid = insertRefid(subdir->getOutputFileBase());
+
+      bindIntParameter(innerdir_insert,":inner_refid", inner_refid.rowid);
+      bindIntParameter(innerdir_insert,":outer_refid", outer_refid.rowid);
+      bindTextParameter(innerdir_insert,":name",subdir->displayName().data(),FALSE);
+      step(innerdir_insert);
+    }
+  }
+}
 
 static void writeInnerNamespaces(const NamespaceSDict *nl, struct Refid outer_refid)
 {
