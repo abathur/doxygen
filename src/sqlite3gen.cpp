@@ -190,8 +190,8 @@ const char * table_schema[][2] = {
       "\tremovable            INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\traisable             INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       /// @todo make a `kind' table
-      "\tkind                 TEXT NOT NULL, -- define function variable typedef enum enumvalue signal slot friend DCOP property event\n"
-      // strings for easier introspection & interop
+      "\tkind                 TEXT NOT NULL, -- 'macro definition' 'function' 'variable' 'typedef' 'enumeration' 'enumvalue' 'signal' 'slot' 'friend' 'dcop' 'property' 'event' 'interface' 'service'\n"
+      // string (from MemberDef::memberTypeName()) for easier introspection & interop
       "\tbodystart            INTEGER DEFAULT 0, -- starting line of definition\n"
       "\tbodyend              INTEGER DEFAULT 0, -- ending line of definition\n"
       "\tid_bodyfile          INTEGER DEFAULT 0, -- file of definition\n"
