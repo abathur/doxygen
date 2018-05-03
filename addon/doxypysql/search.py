@@ -17,19 +17,19 @@ import json
 import re
 
 class MemberType:
-  Define="0"
-  Function="1"
-  Variable="2"
-  Typedef="3"
-  Enumeration="4"
-  EnumValue="5"
-  Signal="6"
-  Slot="7"
-  Friend="8"
-  DCOP="9"
-  Property="10"
-  Event="11"
-  File="12"
+  Define="macro definition"
+  Function="function"
+  Variable="variable"
+  Typedef="typedef"
+  Enumeration="enumeration"
+  EnumValue="enumvalue"
+  Signal="signal"
+  Slot="slot"
+  Friend="friend"
+  DCOP="dcop"
+  Property="property"
+  Event="event"
+  File="file"
 
 class RequestType:
   References="9901"
