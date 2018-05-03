@@ -78,7 +78,7 @@ class Finder:
 
     def fileName(self,id_file):
         if self.cn.execute("SELECT COUNT(*) FROM files WHERE rowid=?",[id_file]).fetchone()[0] > 1:
-            print >>sys.stderr,"WARNING: non-uniq fileid [%s]. Considering only the first match." % id_file
+            sys.stderr.write("WARNING: non-uniq fileid [%s]. Considering only the first match." % id_file)
 
         for r in self.cn.execute("SELECT * FROM files WHERE rowid=?",[id_file]).fetchall():
                 return r['name']
@@ -87,7 +87,7 @@ class Finder:
 
     def fileId(self,name):
         if self.cn.execute("SELECT COUNT(*) FROM files WHERE"+self.match("name"),[name]).fetchone()[0] > 1:
-            print >>sys.stderr,"WARNING: non-uniq file name [%s]. Considering only the first match." % name
+            sys.stderr.write("WARNING: non-uniq file name [%s]. Considering only the first match." % name)
 
         for r in self.cn.execute("SELECT rowid FROM files WHERE"+self.match("name"),[name]).fetchall():
                 return r[0]
@@ -290,7 +290,7 @@ def processHref(cn,ref):
 def serveCgi():
     import cgi
 
-    print 'Content-Type: application/json\n'
+    print('Content-Type: application/json\n')
 
     fieldStorage = cgi.FieldStorage()
     form = dict((key, fieldStorage.getvalue(key)) for key in fieldStorage.keys())
@@ -298,17 +298,17 @@ def serveCgi():
     if 'href' in form:
         ref = form['href']
     else:
-        print '{"result": null, "error": "no refid given"}'
+        print('{"result": null, "error": "no refid given"}')
         sys.exit(0)
 
     cn=openDb('doxygen_sqlite3.db')
 
     j = processHref(cn,ref)
 
-    print json.dumps({"result":j,"error":None})
+    print(json.dumps({"result":j,"error":None}))
 ###############################################################################
 def usage():
-  print >>sys.stderr,"""Usage: search.py [Options]
+  sys.stderr.write("""Usage: search.py [Options]
 Options:
     -h, --help
     -d <D>    Use database <D> for queries.
@@ -323,7 +323,7 @@ Options:
     -M <C>    Get all members of class <C>.
     -S <C>    Get the sub classes of class <C>.
     -R        Consider the search <term> to be a regex.
-"""
+""")
 ###############################################################################
 def serveCli(argv):
     try:
@@ -378,7 +378,7 @@ def serveCli(argv):
           j=processHref(cn,ref)
         else:
           j=process(f,kind)
-        print json.dumps(j,indent=4)
+        print(json.dumps(j,indent=4))
 
 
 def main(argv):
