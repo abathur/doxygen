@@ -69,7 +69,7 @@ class Finder:
 
     def match(self,row):
         if self.row_type is int:
-            return " id=?"
+            return " rowid=?"
         else:
             if g_use_regexp == True:
                 return " REGEXP (?,%s)" %row
@@ -97,23 +97,24 @@ class Finder:
     def references(self):
         o=[]
         cur = self.cn.cursor()
-        cur.execute("SELECT refid FROM memberdef WHERE"+self.match("name"),[self.name])
-        refids = cur.fetchall()
+        cur.execute("SELECT rowid FROM memberdef WHERE"+self.match("name"),[self.name])
+        rowids = cur.fetchall()
 
-        if len(refids) == 0:
+        if len(rowids) == 0:
             return o
 
-        refid = refids[0]['refid']
+        rowid = rowids[0]['rowid']
         cur = self.cn.cursor()
         #TODO:SELECT rowid from refids where refid=refid
-        for info in cur.execute("SELECT * FROM xrefs WHERE refid_dst LIKE '%"+refid+"%'"):
+        for info in cur.execute("SELECT * FROM xrefs WHERE dst_refid=?", [rowid]):
             item={}
             cur = self.cn.cursor()
-            for i2 in cur.execute("SELECT * FROM memberdef WHERE refid=?",[info['src']]):
+            for i2 in cur.execute("SELECT * FROM memberdef WHERE rowid=?",[info['src_refid']]):
                 item['name']=i2['name']
-                item['src']=info['src']
-                item['file']=self.fileName(info['id_file'])
-                item['line']=info['line']
+                item['src']=info['src_refid']
+                # Below no longer directly supported on this entry; can be found from either memberdef
+                #item['file']=self.fileName(info['id_file'])
+                #item['line']=info['line']
 
             o.append(item)
         return o
@@ -182,7 +183,7 @@ class Finder:
 ###############################################################################
     def params(self):
         o=[]
-        c=self.cn.execute('SELECT id FROM memberdef WHERE'+self.match("name"),[self.name])
+        c=self.cn.execute('SELECT rowid FROM memberdef WHERE'+self.match("name"),[self.name])
         for r in c.fetchall():
             #a=("SELECT * FROM params where id=(SELECT id_param FROM memberdef_params where id_memberdef=?",[id_memberdef])
             item={}
@@ -202,20 +203,20 @@ class Finder:
     def includers(self):
         o=[]
         fid = self.fileId(self.name)
-        c=self.cn.execute('SELECT * FROM includes WHERE id_dst=?',[fid])
+        c=self.cn.execute('SELECT * FROM includes WHERE dst_id=?',[fid])
         for r in c.fetchall():
             item={}
-            item['name'] = self.fileName(r['id_src'])
+            item['name'] = self.fileName(r['src_id'])
             o.append(item)
         return o
 ###############################################################################
     def includees(self):
         o=[]
         fid = self.fileId(self.name)
-        c=self.cn.execute('SELECT * FROM includes WHERE id_src=?',[fid])
+        c=self.cn.execute('SELECT * FROM includes WHERE src_id=?',[fid])
         for r in c.fetchall():
             item={}
-            item['name'] = self.fileName(r['id_dst'])
+            item['name'] = self.fileName(r['dst_id'])
             o.append(item)
         return o
 ###############################################################################
@@ -235,19 +236,19 @@ class Finder:
 ###############################################################################
     def baseClasses(self):
         o=[]
-        c=self.cn.execute('SELECT base FROM basecompoundref WHERE'+self.match("derived"),[self.name])
+        c=self.cn.execute('SELECT compounddef.name FROM compounddef JOIN compoundref ON compounddef.rowid=compoundref.base_refid WHERE compoundref.derived_refid IN (SELECT rowid FROM compounddef WHERE'+self.match("name")+')',[self.name])
         for r in c.fetchall():
             item={}
-            item['name'] = r['base']
+            item['name'] = r['name']
             o.append(item)
         return o
 ###############################################################################
     def subClasses(self):
         o=[]
-        c=self.cn.execute('SELECT derived FROM basecompoundref WHERE'+self.match("base"),[self.name])
+        c=self.cn.execute('SELECT compounddef.name FROM compounddef JOIN compoundref ON compounddef.rowid=compoundref.derived_refid WHERE compoundref.base_refid IN (SELECT rowid FROM compounddef WHERE'+self.match("name")+')',[self.name])
         for r in c.fetchall():
             item={}
-            item['name'] = r['derived']
+            item['name'] = r['name']
             o.append(item)
         return o
 ###############################################################################
@@ -268,21 +269,23 @@ def process(f,kind):
     }
     return request_processors[kind]()
 ###############################################################################
+
+# the -H option isn't documented. It's one of the more recent additions, but it's treating refids as if they would be a string. I'm just taking a stab at updating it for now, converting to use rowid, and making other edits necessary to get it to run.
 def processHref(cn,ref):
     j={}
 
     # is it in memberdef ?
     table="memberdef"
-    if ( cn.execute("SELECT count(*) from %s WHERE refid=?"%table,[ref] ).fetchone()[0] > 0 ):
-        for r in cn.execute("SELECT kind,id FROM %s WHERE refid='%s'" % (table,ref) ).fetchall():
-            f=Finder(cn,r['id'],int)
+    if ( cn.execute("SELECT count(*) from %s WHERE rowid=?"%table,[ref] ).fetchone()[0] > 0 ):
+        for r in cn.execute("SELECT kind,rowid FROM %s WHERE rowid=?" % table,[ref]).fetchall():
+            f=Finder(cn,r['rowid'],int)
             j=process(f,str(r['kind']))
 
     # is it in compounddef ?
     table="compounddef"
-    if ( cn.execute("SELECT count(*) from %s WHERE refid=?"%table,[ref]).fetchone()[0] > 0 ):
-        for r in cn.execute("SELECT id FROM %s WHERE refid=?"%table,[ref] ).fetchall():
-            f=Finder(cn,r['id'],int)
+    if ( cn.execute("SELECT count(*) from %s WHERE rowid=?"%table,[ref]).fetchone()[0] > 0 ):
+        for r in cn.execute("SELECT rowid FROM %s WHERE rowid=?"%table,[ref] ).fetchall():
+            f=Finder(cn,r[0],int)
             j=process(f,RequestType.Struct)
 
     return j
@@ -362,6 +365,7 @@ def serveCli(argv):
         elif a in ('-f'):
             kind=MemberType.Function
         elif a in ('-F'):
+            # undocumented but seems like the lower case "search" patterns?
             kind=MemberType.File
         elif a in ('-m'):
             kind=MemberType.Define
@@ -370,6 +374,7 @@ def serveCli(argv):
         elif a in ('-v'):
             kind=MemberType.Variable
         elif a in ('-H'):
+            # undocumented
             ref = o
 
         cn=openDb(dbname)
