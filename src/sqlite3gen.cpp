@@ -31,6 +31,7 @@
 #include "docparser.h"
 #include "language.h"
 
+#include "version.h"
 #include "dot.h"
 #include "arguments.h"
 #include "classlist.h"
@@ -58,6 +59,22 @@ static void sqlLog(void *dbName, const char *sql){
 
 const char * table_schema[][2] = {
   /* TABLES */
+  { "meta",
+    "CREATE TABLE IF NOT EXISTS meta (\n"
+      "\t-- doxygen info \n"
+      "\tdoxygen_version    TEXT PRIMARY KEY NOT NULL,\n"
+      //TODO: I'm of two minds about the schema. I guess tools could just care about the doxygen version, and derive their assumptions about behavior from that. But, Doxygen's version is likely to rollover much faster than the schema, and at least until it becomes a core output format, we might want to make fairly large schema changes even on minor iterations for Doxygen itself. If these tools just track a predefined semver schema version that can iterate independently, it *might* not be as hard to keep them in sync?
+      "\tschema_version     TEXT NOT NULL,\n"
+      "\t-- run info \n"
+      "\tgenerated_at       TEXT NOT NULL,\n"
+      "\tgenerated_on       TEXT NOT NULL,\n"
+      "\t-- project info \n"
+      "\tproject_name       TEXT NOT NULL,\n"
+      "\tproject_number     TEXT,\n"
+      "\tproject_brief      TEXT\n"
+      //TODO: to some degree this is spilling over into the question of whether we need to document broader config options? I guess I could make a config table and read all of the keys in, but I think this idea can wait until there's actually a clear need.
+      ");"
+  },
   { "includes",
     "CREATE TABLE IF NOT EXISTS includes (\n"
       "\t-- #include relations.\n"
@@ -394,6 +411,13 @@ struct SqlStmt {
    prepareStatements(). If sqlite3 is segfaulting (especially in
    sqlite3_clear_bindings(), using an un-prepared statement may
    be the cause. */
+SqlStmt meta_insert = { "INSERT INTO meta "
+    "( doxygen_version, schema_version, generated_at, generated_on, project_name, project_number, project_brief ) "
+    "VALUES "
+    "(:doxygen_version,:schema_version,:generated_at,:generated_on,:project_name,:project_number,:project_brief )"
+    ,NULL
+};
+//////////////////////////////////////////////////////
 SqlStmt incl_insert = { "INSERT INTO includes "
   "( local, src_id, dst_id ) "
     "VALUES "
@@ -773,6 +797,18 @@ static int insertFile(const char* name)
   return rowid;
 }
 
+static void recordMetadata()
+{
+  bindTextParameter(meta_insert,":doxygen_version",versionString);
+  bindTextParameter(meta_insert,":schema_version","0.2.0"); //TODO: this should be a constant somewhere; not sure where
+  bindTextParameter(meta_insert,":generated_at",dateToString(TRUE), FALSE);
+  bindTextParameter(meta_insert,":generated_on",dateToString(FALSE), FALSE);
+  bindTextParameter(meta_insert,":project_name",Config_getString(PROJECT_NAME));
+  bindTextParameter(meta_insert,":project_number",Config_getString(PROJECT_NUMBER));
+  bindTextParameter(meta_insert,":project_brief",Config_getString(PROJECT_BRIEF));
+  step(meta_insert);
+}
+
 struct Refid {
   int rowid;
   const char *refid;
@@ -984,6 +1020,7 @@ static int prepareStatement(sqlite3 *db, SqlStmt &s)
 static int prepareStatements(sqlite3 *db)
 {
   if (
+  -1==prepareStatement(db, meta_insert) ||
   -1==prepareStatement(db, memberdef_exists) ||
   -1==prepareStatement(db, memberdef_incomplete) ||
   -1==prepareStatement(db, memberdef_insert) ||
@@ -2249,6 +2286,8 @@ void generateSqlite3()
     err("sqlite generator: prepareStatements failed!");
     return;
   }
+
+  recordMetadata();
 
   // + classes
   ClassSDict::Iterator cli(*Doxygen::classSDict);
