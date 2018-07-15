@@ -841,11 +841,13 @@ static int insertFile(const char* name)
   int rowid=-1;
   if (name==0) return rowid;
 
-  bindTextParameter(files_select,":name",name);
+  name = stripFromPath(name);
+
+  bindTextParameter(files_select,":name",name,FALSE);
   rowid=step(files_select,TRUE,TRUE);
   if (rowid==0)
   {
-    bindTextParameter(files_insert,":name",name);
+    bindTextParameter(files_insert,":name",name,FALSE);
     rowid=step(files_insert,TRUE);
   }
   return rowid;
@@ -1414,7 +1416,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     if (md->getStartBodyLine()!=-1)
     {
       memberdef_update = memberdef_update_def;
-      int id_bodyfile = insertFile(stripFromPath(md->getBodyDef()->absFilePath()));
+      int id_bodyfile = insertFile(md->getBodyDef()->absFilePath());
       if (id_bodyfile == -1)
       {
           sqlite3_clear_bindings(memberdef_update.stmt);
@@ -1432,7 +1434,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
       memberdef_update = memberdef_update_decl;
       if (md->getDefLine() != -1)
       {
-        int id_file = insertFile(stripFromPath(md->getDefFileName()));
+        int id_file = insertFile(md->getDefFileName());
         if (id_file!=-1)
         {
           bindIntParameter(memberdef_update,":id_file",id_file);
@@ -1659,7 +1661,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   // File location
   if (md->getDefLine() != -1)
   {
-    int id_file = insertFile(stripFromPath(md->getDefFileName()));
+    int id_file = insertFile(md->getDefFileName());
     if (id_file!=-1)
     {
       bindIntParameter(memberdef_insert,":id_file",id_file);
@@ -1668,7 +1670,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 
       if (md->getStartBodyLine()!=-1)
       {
-        int id_bodyfile = insertFile(stripFromPath(md->getBodyDef()->absFilePath()));
+        int id_bodyfile = insertFile(md->getBodyDef()->absFilePath());
         if (id_bodyfile == -1)
         {
             sqlite3_clear_bindings(memberdef_insert.stmt);
@@ -1830,7 +1832,7 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   bindTextParameter(compounddef_insert,":kind",cd->compoundTypeString(),FALSE);
   bindIntParameter(compounddef_insert,":prot",cd->protection());
 
-  int id_file = insertFile(stripFromPath(cd->getDefFileName()));
+  int id_file = insertFile(cd->getDefFileName());
   bindIntParameter(compounddef_insert,":id_file",id_file);
   bindIntParameter(compounddef_insert,":line",cd->getDefLine());
   bindIntParameter(compounddef_insert,":column",cd->getDefColumn());
@@ -1882,7 +1884,7 @@ static void generateSqlite3ForClass(const ClassDef *cd)
     if (nm.isEmpty() && ii->fileDef) nm = ii->fileDef->docName();
     if (!nm.isEmpty())
     {
-      int dst_id=insertFile(stripFromPath(nm));
+      int dst_id=insertFile(ii->fileDef->absFilePath());
       if (dst_id!=-1) {
         bindIntParameter(incl_select,":local",ii->local);
         bindIntParameter(incl_select,":src_id",id_file);
@@ -1950,7 +1952,7 @@ static void generateSqlite3ForNamespace(const NamespaceDef *nd)
   bindTextParameter(compounddef_insert,":title",nd->title(), FALSE);
   bindTextParameter(compounddef_insert,":kind","namespace",FALSE);
 
-  int id_file = insertFile(stripFromPath(nd->getDefFileName()));
+  int id_file = insertFile(nd->getDefFileName());
   bindIntParameter(compounddef_insert,":id_file",id_file);
   bindIntParameter(compounddef_insert,":line",nd->getDefLine());
   bindIntParameter(compounddef_insert,":column",nd->getDefColumn());
@@ -2016,7 +2018,7 @@ static void generateSqlite3ForFile(const FileDef *fd)
   bindTextParameter(compounddef_insert,":title",fd->title(),FALSE);
   bindTextParameter(compounddef_insert,":kind","file",FALSE);
 
-  int id_file = insertFile(stripFromPath(fd->getDefFileName()));
+  int id_file = insertFile(fd->getDefFileName());
   bindIntParameter(compounddef_insert,":id_file",id_file);
   bindIntParameter(compounddef_insert,":line",fd->getDefLine());
   bindIntParameter(compounddef_insert,":column",fd->getDefColumn());
@@ -2033,8 +2035,8 @@ static void generateSqlite3ForFile(const FileDef *fd)
     QListIterator<IncludeInfo> ili(*fd->includeFileList());
     for (ili.toFirst();(ii=ili.current());++ili)
     {
-      int src_id=insertFile(stripFromPath(fd->absFilePath()));
-      int dst_id=insertFile(stripFromPath(ii->includeName));
+      int src_id=insertFile(fd->absFilePath());
+      int dst_id=insertFile(ii->fileDef->absFilePath());
       bindIntParameter(incl_select,":local",ii->local);
       bindIntParameter(incl_select,":src_id",src_id);
       bindIntParameter(incl_select,":dst_id",dst_id);
@@ -2053,8 +2055,8 @@ static void generateSqlite3ForFile(const FileDef *fd)
     QListIterator<IncludeInfo> ili(*fd->includedByFileList());
     for (ili.toFirst();(ii=ili.current());++ili)
     {
-      int src_id=insertFile(stripFromPath(ii->includeName));
-      int dst_id=insertFile(stripFromPath(fd->absFilePath()));
+      int src_id=insertFile(ii->fileDef->absFilePath());
+      int dst_id=insertFile(fd->absFilePath());
       bindIntParameter(incl_select,":local",ii->local);
       bindIntParameter(incl_select,":src_id",src_id);
       bindIntParameter(incl_select,":dst_id",dst_id);
@@ -2127,7 +2129,7 @@ static void generateSqlite3ForGroup(const GroupDef *gd)
   bindTextParameter(compounddef_insert,":title",gd->groupTitle(), FALSE);
   bindTextParameter(compounddef_insert,":kind","group",FALSE);
 
-  int id_file = insertFile(stripFromPath(gd->getDefFileName()));
+  int id_file = insertFile(gd->getDefFileName());
   bindIntParameter(compounddef_insert,":id_file",id_file);
   bindIntParameter(compounddef_insert,":line",gd->getDefLine());
   bindIntParameter(compounddef_insert,":column",gd->getDefColumn());
@@ -2193,7 +2195,7 @@ static void generateSqlite3ForDir(const DirDef *dd)
   bindTextParameter(compounddef_insert,":name",dd->displayName());
   bindTextParameter(compounddef_insert,":kind","dir",FALSE);
 
-  int id_file = insertFile(stripFromPath(dd->getDefFileName()));
+  int id_file = insertFile(dd->getDefFileName());
   bindIntParameter(compounddef_insert,":id_file",id_file);
   bindIntParameter(compounddef_insert,":line",dd->getDefLine());
   bindIntParameter(compounddef_insert,":column",dd->getDefColumn());
@@ -2267,7 +2269,7 @@ static void generateSqlite3ForPage(const PageDef *pd,bool isExample)
 
   bindTextParameter(compounddef_insert,":kind", "page");
 
-  int id_file = insertFile(stripFromPath(pd->getDefFileName()));
+  int id_file = insertFile(pd->getDefFileName());
 
   bindIntParameter(compounddef_insert,":id_file",id_file);
   bindIntParameter(compounddef_insert,":line",pd->getDefLine());
