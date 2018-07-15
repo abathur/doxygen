@@ -212,8 +212,8 @@ const char * table_schema[][2] = {
       // string (from MemberDef::memberTypeName()) for easier introspection & interop
       "\tbodystart            INTEGER DEFAULT 0, -- starting line of definition\n"
       "\tbodyend              INTEGER DEFAULT 0, -- ending line of definition\n"
-      "\tid_bodyfile          INTEGER DEFAULT 0, -- file of definition\n"
-      "\tid_file              INTEGER NOT NULL,  -- file where this identifier is located\n"
+      "\tbodyfile_id          INTEGER DEFAULT 0, -- file of definition\n"
+      "\tfile_id              INTEGER NOT NULL,  -- file where this identifier is located\n"
       "\tline                 INTEGER NOT NULL,  -- line where this identifier is located\n"
       "\tcolumn               INTEGER NOT NULL,  -- column where this identifier is located\n"
       /// @todo make a `detaileddescription' table
@@ -254,7 +254,7 @@ const char * table_schema[][2] = {
       "\ttitle                TEXT,\n"
       "\tkind                 TEXT NOT NULL,\n"
       "\tprot                 INTEGER,\n"
-      "\tid_file              INTEGER NOT NULL,\n"
+      "\tfile_id              INTEGER NOT NULL,\n"
       "\tline                 INTEGER NOT NULL,\n"
       "\tcolumn               INTEGER NOT NULL,\n"
       "\tdetaileddescription  TEXT,\n"
@@ -291,8 +291,8 @@ const char * table_schema[][2] = {
     "CREATE TABLE IF NOT EXISTS memberdef_params (\n"
       "\t-- Junction table for memberdef parameters.\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tid_memberdef INTEGER NOT NULL,\n"
-      "\tid_param     INTEGER NOT NULL\n"
+      "\tmemberdef_id INTEGER NOT NULL,\n"
+      "\tparam_id     INTEGER NOT NULL\n"
       ");"
   },
 };
@@ -617,8 +617,8 @@ SqlStmt memberdef_insert={"INSERT INTO memberdef "
       "kind,"
       "bodystart,"
       "bodyend,"
-      "id_bodyfile,"
-      "id_file,"
+      "bodyfile_id,"
+      "file_id,"
       "line,"
       "column,"
       "detaileddescription,"
@@ -675,8 +675,8 @@ SqlStmt memberdef_insert={"INSERT INTO memberdef "
       ":kind,"
       ":bodystart,"
       ":bodyend,"
-      ":id_bodyfile,"
-      ":id_file,"
+      ":bodyfile_id,"
+      ":file_id,"
       ":line,"
       ":column,"
       ":detaileddescription,"
@@ -688,7 +688,7 @@ SqlStmt memberdef_insert={"INSERT INTO memberdef "
 /* We have a slightly different need than the XML here. The XML can have two memberdef nodes with the same refid to document the declaration and the definition. This doesn't play very nice with a referential model. It isn't a big issue if only one is documented, but in case both are, we'll fall back on this kludge to combine them in a single row... */
 SqlStmt memberdef_update_decl={"UPDATE memberdef SET "
       "inline = :inline,"
-      "id_file = :id_file,"
+      "file_id = :file_id,"
       "line = :line,"
       "column = :column,"
       "detaileddescription = 'Declaration: ' || :detaileddescription || 'Definition: ' || detaileddescription,"
@@ -701,7 +701,7 @@ SqlStmt memberdef_update_def={"UPDATE memberdef SET "
       "inline = :inline,"
       "bodystart = :bodystart,"
       "bodyend = :bodyend,"
-      "id_bodyfile = :id_bodyfile,"
+      "bodyfile_id = :bodyfile_id,"
       "detaileddescription = 'Declaration: ' || detaileddescription || 'Definition: ' || :detaileddescription,"
       "briefdescription = 'Declaration: ' || briefdescription || 'Definition: ' || :briefdescription,"
       "inbodydescription = 'Declaration: ' || inbodydescription || 'Definition: ' || :inbodydescription"
@@ -717,9 +717,9 @@ SqlStmt member_insert={"INSERT INTO member "
 };
 //////////////////////////////////////////////////////
 SqlStmt compounddef_insert={"INSERT INTO compounddef "
-    "( rowid, name, title, kind, prot, id_file, line, column, briefdescription, detaileddescription ) "
+    "( rowid, name, title, kind, prot, file_id, line, column, briefdescription, detaileddescription ) "
     "VALUES "
-    "(:rowid, :name,:title,:kind,:prot,:id_file,:line,:column,:briefdescription,:detaileddescription )"
+    "(:rowid, :name,:title,:kind,:prot,:file_id,:line,:column,:briefdescription,:detaileddescription )"
     ,NULL
 };
 SqlStmt compounddef_exists={"SELECT EXISTS (SELECT * FROM compounddef WHERE rowid = :rowid)"
@@ -751,9 +751,9 @@ SqlStmt params_insert = { "INSERT INTO  params "
 };
 //////////////////////////////////////////////////////
 SqlStmt memberdef_params_insert={ "INSERT INTO  memberdef_params "
-    "( id_memberdef, id_param)"
+    "( memberdef_id, param_id)"
     "VALUES "
-    "(:id_memberdef,:id_param)"
+    "(:memberdef_id,:param_id)"
     ,NULL
 };
 
@@ -944,7 +944,7 @@ static void insertMemberReference(const MemberDef *src, const MemberDef *dst, co
   insertMemberReference(src_refid,dst_refid,context);
 }
 
-static void insertMemberFunctionParams(int id_memberdef, const MemberDef *md, const Definition *def)
+static void insertMemberFunctionParams(int memberdef_id, const MemberDef *md, const Definition *def)
 {
   ArgumentList *declAl = md->declArgumentList();
   ArgumentList *defAl = md->argumentList();
@@ -1004,23 +1004,23 @@ static void insertMemberFunctionParams(int id_memberdef, const MemberDef *md, co
       }
       if (defArg) ++defAli;
 
-      int id_param=step(params_select,TRUE,TRUE);
-      if (id_param==0) {
-        id_param=step(params_insert,TRUE);
+      int param_id=step(params_select,TRUE,TRUE);
+      if (param_id==0) {
+        param_id=step(params_insert,TRUE);
       }
-      if (id_param==-1) {
+      if (param_id==-1) {
           msg("error INSERT params failed\n");
           continue;
       }
 
-      bindIntParameter(memberdef_params_insert,":id_memberdef",id_memberdef);
-      bindIntParameter(memberdef_params_insert,":id_param",id_param);
+      bindIntParameter(memberdef_params_insert,":memberdef_id",memberdef_id);
+      bindIntParameter(memberdef_params_insert,":param_id",param_id);
       step(memberdef_params_insert);
     }
   }
 }
 
-static void insertMemberDefineParams(int id_memberdef,const MemberDef *md, const Definition *def)
+static void insertMemberDefineParams(int memberdef_id,const MemberDef *md, const Definition *def)
 {
     if (md->argumentList()->count()==0) // special case for "foo()" to
                                         // disguish it from "foo".
@@ -1034,14 +1034,14 @@ static void insertMemberDefineParams(int id_memberdef,const MemberDef *md, const
       for (ali.toFirst();(a=ali.current());++ali)
       {
         bindTextParameter(params_insert,":defname",a->type);
-        int id_param=step(params_insert,TRUE);
-        if (id_param==-1) {
+        int param_id=step(params_insert,TRUE);
+        if (param_id==-1) {
           msg("error INSERT param(%s) failed\n", a->type.data());
           continue;
         }
 
-        bindIntParameter(memberdef_params_insert,":id_memberdef",id_memberdef);
-        bindIntParameter(memberdef_params_insert,":id_param",id_param);
+        bindIntParameter(memberdef_params_insert,":memberdef_id",memberdef_id);
+        bindIntParameter(memberdef_params_insert,":param_id",param_id);
         step(memberdef_params_insert);
       }
     }
@@ -1416,14 +1416,14 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     if (md->getStartBodyLine()!=-1)
     {
       memberdef_update = memberdef_update_def;
-      int id_bodyfile = insertFile(md->getBodyDef()->absFilePath());
-      if (id_bodyfile == -1)
+      int bodyfile_id = insertFile(md->getBodyDef()->absFilePath());
+      if (bodyfile_id == -1)
       {
           sqlite3_clear_bindings(memberdef_update.stmt);
       }
       else
       {
-          bindIntParameter(memberdef_update,":id_bodyfile",id_bodyfile);
+          bindIntParameter(memberdef_update,":bodyfile_id",bodyfile_id);
           bindIntParameter(memberdef_update,":bodystart",md->getStartBodyLine());
           bindIntParameter(memberdef_update,":bodyend",md->getEndBodyLine());
       }
@@ -1434,10 +1434,10 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
       memberdef_update = memberdef_update_decl;
       if (md->getDefLine() != -1)
       {
-        int id_file = insertFile(md->getDefFileName());
-        if (id_file!=-1)
+        int file_id = insertFile(md->getDefFileName());
+        if (file_id!=-1)
         {
-          bindIntParameter(memberdef_update,":id_file",id_file);
+          bindIntParameter(memberdef_update,":file_id",file_id);
           bindIntParameter(memberdef_update,":line",md->getDefLine());
           bindIntParameter(memberdef_update,":column",md->getDefColumn());
         }
@@ -1661,23 +1661,23 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   // File location
   if (md->getDefLine() != -1)
   {
-    int id_file = insertFile(md->getDefFileName());
-    if (id_file!=-1)
+    int file_id = insertFile(md->getDefFileName());
+    if (file_id!=-1)
     {
-      bindIntParameter(memberdef_insert,":id_file",id_file);
+      bindIntParameter(memberdef_insert,":file_id",file_id);
       bindIntParameter(memberdef_insert,":line",md->getDefLine());
       bindIntParameter(memberdef_insert,":column",md->getDefColumn());
 
       if (md->getStartBodyLine()!=-1)
       {
-        int id_bodyfile = insertFile(md->getBodyDef()->absFilePath());
-        if (id_bodyfile == -1)
+        int bodyfile_id = insertFile(md->getBodyDef()->absFilePath());
+        if (bodyfile_id == -1)
         {
             sqlite3_clear_bindings(memberdef_insert.stmt);
         }
         else
         {
-            bindIntParameter(memberdef_insert,":id_bodyfile",id_bodyfile);
+            bindIntParameter(memberdef_insert,":bodyfile_id",bodyfile_id);
             bindIntParameter(memberdef_insert,":bodystart",md->getStartBodyLine());
             bindIntParameter(memberdef_insert,":bodyend",md->getEndBodyLine());
         }
@@ -1685,16 +1685,16 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     }
   }
 
-  int id_memberdef=step(memberdef_insert,TRUE);
+  int memberdef_id=step(memberdef_insert,TRUE);
 
   if (isFunc)
   {
-    insertMemberFunctionParams(id_memberdef,md,def);
+    insertMemberFunctionParams(memberdef_id,md,def);
   }
   else if (md->memberType()==MemberType_Define &&
           md->argsString())
   {
-    insertMemberDefineParams(id_memberdef,md,def);
+    insertMemberDefineParams(memberdef_id,md,def);
   }
 
   // + source references
@@ -1832,8 +1832,8 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   bindTextParameter(compounddef_insert,":kind",cd->compoundTypeString(),FALSE);
   bindIntParameter(compounddef_insert,":prot",cd->protection());
 
-  int id_file = insertFile(cd->getDefFileName());
-  bindIntParameter(compounddef_insert,":id_file",id_file);
+  int file_id = insertFile(cd->getDefFileName());
+  bindIntParameter(compounddef_insert,":file_id",file_id);
   bindIntParameter(compounddef_insert,":line",cd->getDefLine());
   bindIntParameter(compounddef_insert,":column",cd->getDefColumn());
 
@@ -1887,13 +1887,13 @@ static void generateSqlite3ForClass(const ClassDef *cd)
       int dst_id=insertFile(ii->fileDef->absFilePath());
       if (dst_id!=-1) {
         bindIntParameter(incl_select,":local",ii->local);
-        bindIntParameter(incl_select,":src_id",id_file);
+        bindIntParameter(incl_select,":src_id",file_id);
         bindIntParameter(incl_select,":dst_id",dst_id);
         int count=step(incl_select,TRUE,TRUE);
         if (count==0)
         {
           bindIntParameter(incl_insert,":local",ii->local);
-          bindIntParameter(incl_insert,":src_id",id_file);
+          bindIntParameter(incl_insert,":src_id",file_id);
           bindIntParameter(incl_insert,":dst_id",dst_id);
           step(incl_insert);
         }
@@ -1940,7 +1940,7 @@ static void generateSqlite3ForNamespace(const NamespaceDef *nd)
   // + normal members
   // + brief desc
   // + detailed desc
-  // + location (id_file, line, column)
+  // + location (file_id, line, column)
   // - files containing (parts of) the namespace definition
 
   if (nd->isReference() || nd->isHidden()) return; // skip external references
@@ -1952,8 +1952,8 @@ static void generateSqlite3ForNamespace(const NamespaceDef *nd)
   bindTextParameter(compounddef_insert,":title",nd->title(), FALSE);
   bindTextParameter(compounddef_insert,":kind","namespace",FALSE);
 
-  int id_file = insertFile(nd->getDefFileName());
-  bindIntParameter(compounddef_insert,":id_file",id_file);
+  int file_id = insertFile(nd->getDefFileName());
+  bindIntParameter(compounddef_insert,":file_id",file_id);
   bindIntParameter(compounddef_insert,":line",nd->getDefLine());
   bindIntParameter(compounddef_insert,":column",nd->getDefColumn());
 
@@ -2005,7 +2005,7 @@ static void generateSqlite3ForFile(const FileDef *fd)
   // + brief desc
   // + detailed desc
   // x source code
-  // + location (id_file, line, column)
+  // + location (file_id, line, column)
   // - number of lines
 
   if (fd->isReference()) return; // skip external references
@@ -2018,8 +2018,8 @@ static void generateSqlite3ForFile(const FileDef *fd)
   bindTextParameter(compounddef_insert,":title",fd->title(),FALSE);
   bindTextParameter(compounddef_insert,":kind","file",FALSE);
 
-  int id_file = insertFile(fd->getDefFileName());
-  bindIntParameter(compounddef_insert,":id_file",id_file);
+  int file_id = insertFile(fd->getDefFileName());
+  bindIntParameter(compounddef_insert,":file_id",file_id);
   bindIntParameter(compounddef_insert,":line",fd->getDefLine());
   bindIntParameter(compounddef_insert,":column",fd->getDefColumn());
 
@@ -2129,8 +2129,8 @@ static void generateSqlite3ForGroup(const GroupDef *gd)
   bindTextParameter(compounddef_insert,":title",gd->groupTitle(), FALSE);
   bindTextParameter(compounddef_insert,":kind","group",FALSE);
 
-  int id_file = insertFile(gd->getDefFileName());
-  bindIntParameter(compounddef_insert,":id_file",id_file);
+  int file_id = insertFile(gd->getDefFileName());
+  bindIntParameter(compounddef_insert,":file_id",file_id);
   bindIntParameter(compounddef_insert,":line",gd->getDefLine());
   bindIntParameter(compounddef_insert,":column",gd->getDefColumn());
 
@@ -2185,7 +2185,7 @@ static void generateSqlite3ForDir(const DirDef *dd)
   // + files
   // + briefdescription
   // + detaileddescription
-  // + location (cleanup: I'm using id_file, line, column as usual, but XML just uses file; line/col may break or do nothing)
+  // + location (cleanup: I'm using file_id, line, column as usual, but XML just uses file; line/col may break or do nothing)
   if (dd->isReference()) return; // skip external references
 
   struct Refid refid = insertRefid(dd->getOutputFileBase());
@@ -2195,8 +2195,8 @@ static void generateSqlite3ForDir(const DirDef *dd)
   bindTextParameter(compounddef_insert,":name",dd->displayName());
   bindTextParameter(compounddef_insert,":kind","dir",FALSE);
 
-  int id_file = insertFile(dd->getDefFileName());
-  bindIntParameter(compounddef_insert,":id_file",id_file);
+  int file_id = insertFile(dd->getDefFileName());
+  bindIntParameter(compounddef_insert,":file_id",file_id);
   bindIntParameter(compounddef_insert,":line",dd->getDefLine());
   bindIntParameter(compounddef_insert,":column",dd->getDefColumn());
 
@@ -2269,9 +2269,9 @@ static void generateSqlite3ForPage(const PageDef *pd,bool isExample)
 
   bindTextParameter(compounddef_insert,":kind", "page");
 
-  int id_file = insertFile(pd->getDefFileName());
+  int file_id = insertFile(pd->getDefFileName());
 
-  bindIntParameter(compounddef_insert,":id_file",id_file);
+  bindIntParameter(compounddef_insert,":file_id",file_id);
   bindIntParameter(compounddef_insert,":line",pd->getDefLine());
   bindIntParameter(compounddef_insert,":column",pd->getDefColumn());
 
