@@ -154,7 +154,8 @@ const char * table_schema[][2] = {
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tsrc_refid    INTEGER NOT NULL REFERENCES refids, -- referrer id.\n"
       "\tdst_refid    INTEGER NOT NULL REFERENCES refids, -- referee id.\n"
-      "\tUNIQUE(src_refid, dst_refid) ON CONFLICT IGNORE\n"
+      "\tcontext      TEXT NOT NULL, -- inline, argument, initializer \n"
+      "\tUNIQUE(src_refid, dst_refid, context) ON CONFLICT IGNORE\n"
       ");\n"
   },
   { "memberdef",
@@ -350,6 +351,51 @@ const char * table_schema[][2] = {
     /*
     Adding this to make relations easier to work with. The idea is that you can join this table to ref, compounddef, or memberdef, and get a summary view of which kinds of relation exist to/from this record. Instead of aggressively returning full data for all relations whether the user needs them or not, the consumer can use this table (and their own needs) to decide which relations to fetch.
     */
+    "inline_xrefs",
+    "CREATE VIEW IF NOT EXISTS inline_xrefs (\n"
+      "\t-- Crossrefs from inline member source.\n"
+      "\trowid,\n"
+      "\tsrc_refid,\n"
+      "\tdst_refid\n"
+    ")\n"
+    "as SELECT \n"
+      "\txrefs.rowid,\n"
+      "\txrefs.src_refid,\n"
+      "\txrefs.dst_refid\n"
+    "FROM xrefs where xrefs.context='inline';\n"
+  },
+  {
+    /*
+    */
+    "argument_xrefs",
+    "CREATE VIEW IF NOT EXISTS argument_xrefs (\n"
+      "\t-- Crossrefs from member def/decl arguments\n"
+      "\trowid,\n"
+      "\tsrc_refid,\n"
+      "\tdst_refid\n"
+    ")\n"
+    "as SELECT \n"
+      "\txrefs.rowid,\n"
+      "\txrefs.src_refid,\n"
+      "\txrefs.dst_refid\n"
+    "FROM xrefs where xrefs.context='argument';\n"
+  },
+  {
+    /*
+    */
+    "initializer_xrefs",
+    "CREATE VIEW IF NOT EXISTS initializer_xrefs (\n"
+      "\t-- Crossrefs from member initializers\n"
+      "\trowid,\n"
+      "\tsrc_refid,\n"
+      "\tdst_refid\n"
+    ")\n"
+    "as SELECT \n"
+      "\txrefs.rowid,\n"
+      "\txrefs.src_refid,\n"
+      "\txrefs.dst_refid\n"
+    "FROM xrefs where xrefs.context='initializer';\n"
+  },
     "rel",
     "CREATE VIEW IF NOT EXISTS rel (\n"
       "\trowid,\n"
@@ -371,8 +417,12 @@ const char * table_schema[][2] = {
       "\tcompounds,\n"
       "\tsubclasses,\n"
       "\tsuperclasses,\n"
-      "\treferenced,\n"
-      "\t[references]"
+      "\tlinks_in,\n"
+      "\tlinks_out,\n"
+      "\targument_links_in,\n"
+      "\targument_links_out,\n"
+      "\tinitializer_links_in,\n"
+      "\tinitializer_links_out\n"
     ")\n"
     "as SELECT \n"
       "\tref.rowid,\n"
@@ -394,8 +444,12 @@ const char * table_schema[][2] = {
       "\tEXISTS (SELECT rowid FROM member WHERE memberdef_refid=ref.rowid),\n"
       "\tEXISTS (SELECT rowid FROM compoundref WHERE base_refid=ref.rowid),\n"
       "\tEXISTS (SELECT rowid FROM compoundref WHERE derived_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM xrefs WHERE dst_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM xrefs WHERE src_refid=ref.rowid)\n"
+      "\tEXISTS (SELECT rowid FROM inline_xrefs WHERE dst_refid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM inline_xrefs WHERE src_refid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM argument_xrefs WHERE dst_refid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM argument_xrefs WHERE src_refid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM initializer_xrefs WHERE dst_refid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM initializer_xrefs WHERE src_refid=ref.rowid)\n"
     "FROM ref ORDER BY ref.rowid;"
   }
 };
@@ -493,9 +547,9 @@ SqlStmt refids_insert = {"INSERT INTO refids "
 };
 //////////////////////////////////////////////////////
 SqlStmt xrefs_insert= {"INSERT INTO xrefs "
-  "( src_refid, dst_refid )"
+    "( src_refid, dst_refid, context )"
     "VALUES "
-    "(:src_refid,:dst_refid )"
+    "(:src_refid,:dst_refid,:context )"
     ,NULL
 };//////////////////////////////////////////////////////
 SqlStmt reimplements_insert= {"INSERT INTO reimplements "
@@ -857,7 +911,7 @@ static bool compounddefExists(struct Refid refid)
   return test ? true : false;
 }
 
-static bool insertMemberReference(struct Refid src_refid, struct Refid dst_refid)
+static bool insertMemberReference(struct Refid src_refid, struct Refid dst_refid, const char *context)
 {
   if (src_refid.rowid==-1||dst_refid.rowid==-1)
     return false;
@@ -869,21 +923,23 @@ static bool insertMemberReference(struct Refid src_refid, struct Refid dst_refid
   {
     return false;
   }
+  else
+  {
+    bindTextParameter(xrefs_insert,":context",context);
+  }
 
   step(xrefs_insert);
   return true;
 }
 
-static void insertMemberReference(const MemberDef *src, const MemberDef *dst)
+static void insertMemberReference(const MemberDef *src, const MemberDef *dst, const char *context)
 {
   QCString qdst_refid = dst->getOutputFileBase() + "_1" + dst->anchor();
   QCString qsrc_refid = src->getOutputFileBase() + "_1" + src->anchor();
-  if (dst->getStartBodyLine()!=-1 && dst->getBodyDef())
-  {
-    struct Refid src_refid = insertRefid(qsrc_refid);
-    struct Refid dst_refid = insertRefid(qdst_refid);
-    insertMemberReference(src_refid,dst_refid);
-  }
+
+  struct Refid src_refid = insertRefid(qsrc_refid);
+  struct Refid dst_refid = insertRefid(qdst_refid);
+  insertMemberReference(src_refid,dst_refid,context);
 }
 
 static void insertMemberFunctionParams(int id_memberdef, const MemberDef *md, const Definition *def)
@@ -916,7 +972,7 @@ static void insertMemberFunctionParams(int id_memberdef, const MemberDef *md, co
           QCString qsrc_refid = md->getOutputFileBase() + "_1" + md->anchor();
           struct Refid src_refid = insertRefid(qsrc_refid);
           struct Refid dst_refid = insertRefid(s->data());
-          insertMemberReference(src_refid,dst_refid);
+          insertMemberReference(src_refid,dst_refid, "argument");
           ++li;
         }
         bindTextParameter(params_select,":type",a->type);
@@ -1409,7 +1465,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
       const MemberDef *rmd;
       for (mdi.toFirst();(rmd=mdi.current());++mdi)
       {
-        insertMemberReference(md,rmd);
+        insertMemberReference(md,rmd, "inline");
       }
     }
     // + source referenced by
@@ -1420,7 +1476,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
       const MemberDef *rmd;
       for (mdi.toFirst();(rmd=mdi.current());++mdi)
       {
-        insertMemberReference(rmd,md);
+        insertMemberReference(rmd,md, "inline");
       }
     }
     return; //TODO: may be worth breaking up into functions
@@ -1584,7 +1640,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
         QCString qsrc_refid = md->getOutputFileBase() + "_1" + md->anchor();
         struct Refid src_refid = insertRefid(qsrc_refid);
         struct Refid dst_refid = insertRefid(s->data());
-        insertMemberReference(src_refid,dst_refid);
+        insertMemberReference(src_refid,dst_refid, "initializer");
       }
       ++li;
     }
@@ -1649,7 +1705,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     const MemberDef *rmd;
     for (mdi.toFirst();(rmd=mdi.current());++mdi)
     {
-      insertMemberReference(md,rmd);
+      insertMemberReference(md,rmd, "inline");
     }
   }
   // + source referenced by
@@ -1660,7 +1716,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     const  MemberDef *rmd;
     for (mdi.toFirst();(rmd=mdi.current());++mdi)
     {
-      insertMemberReference(rmd,md);
+      insertMemberReference(rmd,md, "inline");
     }
   }
 }
