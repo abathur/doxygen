@@ -88,8 +88,8 @@ const char * table_schema[][2] = {
   { "innerclass",
     "CREATE TABLE IF NOT EXISTS innerclass (\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tinner_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tprot         INTEGER NOT NULL,\n"
       "\tname         TEXT NOT NULL\n"
       ");"
@@ -97,40 +97,40 @@ const char * table_schema[][2] = {
   { "innerpage",
     "CREATE TABLE IF NOT EXISTS innerpage (\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tinner_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tname         TEXT NOT NULL\n"
       ");"
   },
   { "innernamespace",
     "CREATE TABLE IF NOT EXISTS innernamespace (\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tinner_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tname         TEXT NOT NULL\n"
       ");"
   },
   { "innergroup",
     "CREATE TABLE IF NOT EXISTS innergroup (\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tinner_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tname         TEXT NOT NULL\n"
       ");"
   },
   { "innerfile",
     "CREATE TABLE IF NOT EXISTS innerfile (\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tinner_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tname         TEXT NOT NULL\n"
       ");"
   },
   { "innerdir",
     "CREATE TABLE IF NOT EXISTS innerdir (\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tinner_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\touter_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tinner_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tname         TEXT NOT NULL\n"
       ");"
   },
@@ -152,10 +152,10 @@ const char * table_schema[][2] = {
     "CREATE TABLE IF NOT EXISTS xrefs (\n"
       "\t-- Cross reference relation.\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tsrc_refid    INTEGER NOT NULL REFERENCES refids, -- referrer id.\n"
-      "\tdst_refid    INTEGER NOT NULL REFERENCES refids, -- referee id.\n"
+      "\tsrc_rowid    INTEGER NOT NULL REFERENCES refids, -- referrer id.\n"
+      "\tdst_rowid    INTEGER NOT NULL REFERENCES refids, -- referee id.\n"
       "\tcontext      TEXT NOT NULL, -- inline, argument, initializer \n"
-      "\tUNIQUE(src_refid, dst_refid, context) ON CONFLICT IGNORE\n"
+      "\tUNIQUE(src_rowid, dst_rowid, context) ON CONFLICT IGNORE\n"
       ");\n"
   },
   { "memberdef",
@@ -227,12 +227,12 @@ const char * table_schema[][2] = {
   { "member",
     "CREATE TABLE IF NOT EXISTS member (\n"
       "\trowid            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tscope_refid      INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\tmemberdef_refid  INTEGER NOT NULL REFERENCES memberdef,\n"
+      "\tscope_rowid      INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tmemberdef_rowid  INTEGER NOT NULL REFERENCES memberdef,\n"
       "\tprot             INTEGER NOT NULL,\n"
       "\tvirt             INTEGER NOT NULL,\n"
       "\tambiguityscope   TEXT,\n"
-      "\tUNIQUE(scope_refid, memberdef_refid)\n"
+      "\tUNIQUE(scope_rowid, memberdef_rowid)\n"
       ");"
   },
   /* reimplements table combines the xml <reimplementedby> and <reimplements> nodes */
@@ -240,10 +240,9 @@ const char * table_schema[][2] = {
     "CREATE TABLE IF NOT EXISTS reimplements (\n"
       "\t-- Cross reference relation.\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tmemberdef_refid    INTEGER NOT NULL REFERENCES memberdef, -- reimplementing memberdef id.\n"
-      "\treimplemented_refid    INTEGER NOT NULL REFERENCES memberdef, -- reimplemented memberdef id.\n"
-      //removing line/column/id_file; I think we can look all of these up in sql
-      "\tUNIQUE(memberdef_refid, reimplemented_refid) ON CONFLICT IGNORE\n"
+      "\tmemberdef_rowid    INTEGER NOT NULL REFERENCES memberdef, -- reimplementing memberdef id.\n"
+      "\treimplemented_rowid    INTEGER NOT NULL REFERENCES memberdef, -- reimplemented memberdef id.\n"
+      "\tUNIQUE(memberdef_rowid, reimplemented_rowid) ON CONFLICT IGNORE\n"
       ");\n"
   },
   { "compounddef",
@@ -265,11 +264,11 @@ const char * table_schema[][2] = {
   { "compoundref",
     "CREATE TABLE IF NOT EXISTS compoundref (\n"
       "\trowid          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tbase_refid     INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\tderived_refid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tbase_rowid     INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\tderived_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tprot           INTEGER NOT NULL,\n"
       "\tvirt           INTEGER NOT NULL,\n"
-      "\tUNIQUE(base_refid, derived_refid)\n"
+      "\tUNIQUE(base_rowid, derived_rowid)\n"
       ");"
   },
   { "params",
@@ -302,7 +301,7 @@ const char * table_schema[][2] = {
   {
     /*
     Makes all reference/relation tables easier to use. For example:
-    1. query xrefs and join this view on either xrefs.dst_refid=ref.rowid or xrefs.src_refid=ref.rowid
+    1. query xrefs and join this view on either xrefs.dst_rowid=ref.rowid or xrefs.src_rowid=ref.rowid
     3. receive everything you need to output a list of references to or from an entity
 
     It also supports a simple name search/lookup that generalizes compound and member types.
@@ -355,13 +354,13 @@ const char * table_schema[][2] = {
     "CREATE VIEW IF NOT EXISTS inline_xrefs (\n"
       "\t-- Crossrefs from inline member source.\n"
       "\trowid,\n"
-      "\tsrc_refid,\n"
-      "\tdst_refid\n"
+      "\tsrc_rowid,\n"
+      "\tdst_rowid\n"
     ")\n"
     "as SELECT \n"
       "\txrefs.rowid,\n"
-      "\txrefs.src_refid,\n"
-      "\txrefs.dst_refid\n"
+      "\txrefs.src_rowid,\n"
+      "\txrefs.dst_rowid\n"
     "FROM xrefs where xrefs.context='inline';\n"
   },
   {
@@ -371,13 +370,13 @@ const char * table_schema[][2] = {
     "CREATE VIEW IF NOT EXISTS argument_xrefs (\n"
       "\t-- Crossrefs from member def/decl arguments\n"
       "\trowid,\n"
-      "\tsrc_refid,\n"
-      "\tdst_refid\n"
+      "\tsrc_rowid,\n"
+      "\tdst_rowid\n"
     ")\n"
     "as SELECT \n"
       "\txrefs.rowid,\n"
-      "\txrefs.src_refid,\n"
-      "\txrefs.dst_refid\n"
+      "\txrefs.src_rowid,\n"
+      "\txrefs.dst_rowid\n"
     "FROM xrefs where xrefs.context='argument';\n"
   },
   {
@@ -387,13 +386,13 @@ const char * table_schema[][2] = {
     "CREATE VIEW IF NOT EXISTS initializer_xrefs (\n"
       "\t-- Crossrefs from member initializers\n"
       "\trowid,\n"
-      "\tsrc_refid,\n"
-      "\tdst_refid\n"
+      "\tsrc_rowid,\n"
+      "\tdst_rowid\n"
     ")\n"
     "as SELECT \n"
       "\txrefs.rowid,\n"
-      "\txrefs.src_refid,\n"
-      "\txrefs.dst_refid\n"
+      "\txrefs.src_rowid,\n"
+      "\txrefs.dst_rowid\n"
     "FROM xrefs where xrefs.context='initializer';\n"
   },
     "rel",
@@ -426,30 +425,30 @@ const char * table_schema[][2] = {
     ")\n"
     "as SELECT \n"
       "\tref.rowid,\n"
-      "\tEXISTS (SELECT rowid FROM reimplements WHERE reimplemented_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM reimplements WHERE memberdef_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innerpage WHERE outer_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innerpage WHERE inner_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innerdir WHERE outer_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innerdir WHERE inner_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innerfile WHERE outer_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innerfile WHERE inner_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innerclass WHERE outer_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innerclass WHERE inner_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innernamespace WHERE outer_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innernamespace WHERE inner_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innergroup WHERE outer_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM innergroup WHERE inner_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM member WHERE scope_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM member WHERE memberdef_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM compoundref WHERE base_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM compoundref WHERE derived_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM inline_xrefs WHERE dst_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM inline_xrefs WHERE src_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM argument_xrefs WHERE dst_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM argument_xrefs WHERE src_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM initializer_xrefs WHERE dst_refid=ref.rowid),\n"
-      "\tEXISTS (SELECT rowid FROM initializer_xrefs WHERE src_refid=ref.rowid)\n"
+      "\tEXISTS (SELECT rowid FROM reimplements WHERE reimplemented_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM reimplements WHERE memberdef_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innerpage WHERE outer_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innerpage WHERE inner_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innerdir WHERE outer_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innerdir WHERE inner_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innerfile WHERE outer_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innerfile WHERE inner_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innerclass WHERE outer_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innerclass WHERE inner_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innernamespace WHERE outer_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innernamespace WHERE inner_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innergroup WHERE outer_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM innergroup WHERE inner_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM member WHERE scope_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM member WHERE memberdef_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM compoundref WHERE base_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM compoundref WHERE derived_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM inline_xrefs WHERE dst_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM inline_xrefs WHERE src_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM argument_xrefs WHERE dst_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM argument_xrefs WHERE src_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM initializer_xrefs WHERE dst_rowid=ref.rowid),\n"
+      "\tEXISTS (SELECT rowid FROM initializer_xrefs WHERE src_rowid=ref.rowid)\n"
     "FROM ref ORDER BY ref.rowid;"
   }
 };
@@ -484,44 +483,44 @@ SqlStmt incl_select = { "SELECT COUNT(*) FROM includes WHERE "
 };
 //////////////////////////////////////////////////////
 SqlStmt innerclass_insert={"INSERT INTO innerclass "
-    "( inner_refid, outer_refid, prot, name )"
+    "( inner_rowid, outer_rowid, prot, name )"
     "VALUES "
-    "(:inner_refid,:outer_refid,:prot,:name )"
+    "(:inner_rowid,:outer_rowid,:prot,:name )"
     ,NULL
 };
 //////////////////////////////////////////////////////
 SqlStmt innerpage_insert={"INSERT INTO innerpage "
-    "( inner_refid, outer_refid, name )"
+    "( inner_rowid, outer_rowid, name )"
     "VALUES "
-    "(:inner_refid,:outer_refid,:name )"
+    "(:inner_rowid,:outer_rowid,:name )"
     ,NULL
 };
 //////////////////////////////////////////////////////
 SqlStmt innernamespace_insert={"INSERT INTO innernamespace "
-    "( inner_refid, outer_refid, name)"
+    "( inner_rowid, outer_rowid, name)"
     "VALUES "
-    "(:inner_refid,:outer_refid,:name)",
+    "(:inner_rowid,:outer_rowid,:name)",
     NULL
 };
 //////////////////////////////////////////////////////
 SqlStmt innergroup_insert={"INSERT INTO innergroup "
-    "( inner_refid, outer_refid, name)"
+    "( inner_rowid, outer_rowid, name)"
     "VALUES "
-    "(:inner_refid,:outer_refid,:name)",
+    "(:inner_rowid,:outer_rowid,:name)",
     NULL
 };
 //////////////////////////////////////////////////////
 SqlStmt innerdir_insert={"INSERT INTO innerdir "
-    "( inner_refid, outer_refid, name)"
+    "( inner_rowid, outer_rowid, name)"
     "VALUES "
-    "(:inner_refid,:outer_refid,:name)",
+    "(:inner_rowid,:outer_rowid,:name)",
     NULL
 };
 //////////////////////////////////////////////////////
 SqlStmt innerfile_insert={"INSERT INTO innerfile "
-    "( inner_refid, outer_refid, name)"
+    "( inner_rowid, outer_rowid, name)"
     "VALUES "
-    "(:inner_refid,:outer_refid,:name)",
+    "(:inner_rowid,:outer_rowid,:name)",
     NULL
 };
 //////////////////////////////////////////////////////
@@ -547,15 +546,15 @@ SqlStmt refids_insert = {"INSERT INTO refids "
 };
 //////////////////////////////////////////////////////
 SqlStmt xrefs_insert= {"INSERT INTO xrefs "
-    "( src_refid, dst_refid, context )"
+    "( src_rowid, dst_rowid, context )"
     "VALUES "
-    "(:src_refid,:dst_refid,:context )"
+    "(:src_rowid,:dst_rowid,:context )"
     ,NULL
 };//////////////////////////////////////////////////////
 SqlStmt reimplements_insert= {"INSERT INTO reimplements "
-  "( memberdef_refid, reimplemented_refid )"
+  "( memberdef_rowid, reimplemented_rowid )"
     "VALUES "
-    "(:memberdef_refid,:reimplemented_refid )"
+    "(:memberdef_rowid,:reimplemented_rowid )"
     ,NULL
 };
 //////////////////////////////////////////////////////
@@ -710,9 +709,9 @@ SqlStmt memberdef_update_def={"UPDATE memberdef SET "
 };
 //////////////////////////////////////////////////////
 SqlStmt member_insert={"INSERT INTO member "
-    "( scope_refid, memberdef_refid, prot, virt, ambiguityscope ) "
+    "( scope_rowid, memberdef_rowid, prot, virt, ambiguityscope ) "
     "VALUES "
-    "(:scope_refid, :memberdef_refid, :prot, :virt, :ambiguityscope )"
+    "(:scope_rowid, :memberdef_rowid, :prot, :virt, :ambiguityscope )"
     ,NULL
 };
 //////////////////////////////////////////////////////
@@ -727,9 +726,9 @@ SqlStmt compounddef_exists={"SELECT EXISTS (SELECT * FROM compounddef WHERE rowi
 };
 //////////////////////////////////////////////////////
 SqlStmt compoundref_insert={"INSERT INTO compoundref "
-    "( base_refid, derived_refid, prot, virt ) "
+    "( base_rowid, derived_rowid, prot, virt ) "
     "VALUES "
-    "(:base_refid,:derived_refid,:prot,:virt )"
+    "(:base_rowid,:derived_rowid,:prot,:virt )"
     ,NULL
 };
 //////////////////////////////////////////////////////
@@ -919,8 +918,8 @@ static bool insertMemberReference(struct Refid src_refid, struct Refid dst_refid
     return false;
 
   if (
-     !bindIntParameter(xrefs_insert,":src_refid",src_refid.rowid) ||
-     !bindIntParameter(xrefs_insert,":dst_refid",dst_refid.rowid)
+     !bindIntParameter(xrefs_insert,":src_rowid",src_refid.rowid) ||
+     !bindIntParameter(xrefs_insert,":dst_rowid",dst_refid.rowid)
      )
   {
     return false;
@@ -1185,8 +1184,8 @@ static void writeInnerClasses(const ClassSDict *cl, struct Refid outer_refid)
     {
       struct Refid inner_refid = insertRefid(cd->getOutputFileBase());
 
-      bindIntParameter(innerclass_insert,":inner_refid", inner_refid.rowid);
-      bindIntParameter(innerclass_insert,":outer_refid", outer_refid.rowid);
+      bindIntParameter(innerclass_insert,":inner_rowid", inner_refid.rowid);
+      bindIntParameter(innerclass_insert,":outer_rowid", outer_refid.rowid);
       bindIntParameter(innerclass_insert,":prot",cd->protection());
       bindTextParameter(innerclass_insert,":name",cd->name());
       step(innerclass_insert);
@@ -1204,8 +1203,8 @@ static void writeInnerPages(const PageSDict *pl, struct Refid outer_refid)
   {
     struct Refid inner_refid = insertRefid(pd->getGroupDef() ? pd->getOutputFileBase()+"_"+pd->name() : pd->getOutputFileBase());
 
-    bindIntParameter(innerpage_insert,":inner_refid", inner_refid.rowid);
-    bindIntParameter(innerpage_insert,":outer_refid", outer_refid.rowid);
+    bindIntParameter(innerpage_insert,":inner_rowid", inner_refid.rowid);
+    bindIntParameter(innerpage_insert,":outer_rowid", outer_refid.rowid);
 
     bindTextParameter(innerpage_insert,":name",pd->name(),FALSE);
     step(innerpage_insert);
@@ -1223,8 +1222,8 @@ static void writeInnerGroups(const GroupList *gl, struct Refid outer_refid)
     {
       struct Refid inner_refid = insertRefid(sgd->getOutputFileBase());
 
-      bindIntParameter(innergroup_insert,":inner_refid", inner_refid.rowid);
-      bindIntParameter(innergroup_insert,":outer_refid", outer_refid.rowid);
+      bindIntParameter(innergroup_insert,":inner_rowid", inner_refid.rowid);
+      bindIntParameter(innergroup_insert,":outer_rowid", outer_refid.rowid);
       bindTextParameter(innergroup_insert,":name",sgd->groupTitle(),FALSE);
       step(innergroup_insert);
     }
@@ -1241,8 +1240,8 @@ static void writeInnerFiles(const FileList *fl, struct Refid outer_refid)
     {
       struct Refid inner_refid = insertRefid(fd->getOutputFileBase());
 
-      bindIntParameter(innerfile_insert,":inner_refid", inner_refid.rowid);
-      bindIntParameter(innerfile_insert,":outer_refid", outer_refid.rowid);
+      bindIntParameter(innerfile_insert,":inner_rowid", inner_refid.rowid);
+      bindIntParameter(innerfile_insert,":outer_rowid", outer_refid.rowid);
       bindTextParameter(innerfile_insert,":name",fd->name(),FALSE);
       step(innerfile_insert);
     }
@@ -1259,8 +1258,8 @@ static void writeInnerDirs(const DirList *dl, struct Refid outer_refid)
     {
       struct Refid inner_refid = insertRefid(subdir->getOutputFileBase());
 
-      bindIntParameter(innerdir_insert,":inner_refid", inner_refid.rowid);
-      bindIntParameter(innerdir_insert,":outer_refid", outer_refid.rowid);
+      bindIntParameter(innerdir_insert,":inner_rowid", inner_refid.rowid);
+      bindIntParameter(innerdir_insert,":outer_rowid", outer_refid.rowid);
       bindTextParameter(innerdir_insert,":name",subdir->displayName(),FALSE);
       step(innerdir_insert);
     }
@@ -1279,8 +1278,8 @@ static void writeInnerNamespaces(const NamespaceSDict *nl, struct Refid outer_re
       {
         struct Refid inner_refid = insertRefid(nd->getOutputFileBase());
 
-        bindIntParameter(innernamespace_insert,":inner_refid",inner_refid.rowid);
-        bindIntParameter(innernamespace_insert,":outer_refid",outer_refid.rowid);
+        bindIntParameter(innernamespace_insert,":inner_rowid",inner_refid.rowid);
+        bindIntParameter(innernamespace_insert,":outer_rowid",outer_refid.rowid);
         bindTextParameter(innernamespace_insert,":name",nd->name(),FALSE);
         step(innernamespace_insert);
       }
@@ -1585,8 +1584,8 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 
     struct Refid reimplemented_refid = insertRefid(qreimplemented_refid);
 
-    bindIntParameter(reimplements_insert,":memberdef_refid", refid.rowid);
-    bindIntParameter(reimplements_insert,":reimplemented_refid", reimplemented_refid.rowid);
+    bindIntParameter(reimplements_insert,":memberdef_rowid", refid.rowid);
+    bindIntParameter(reimplements_insert,":reimplemented_rowid", reimplemented_refid.rowid);
     step(reimplements_insert,TRUE);
   }
 
@@ -1779,8 +1778,8 @@ static void associateAllMembers(const ClassDef *cd)
 
           struct Refid member_refid = insertRefid(qmember_refid);
 
-          bindIntParameter(member_insert, ":scope_refid", scope_refid.rowid);
-          bindIntParameter(member_insert, ":memberdef_refid", member_refid.rowid);
+          bindIntParameter(member_insert, ":scope_rowid", scope_refid.rowid);
+          bindIntParameter(member_insert, ":memberdef_rowid", member_refid.rowid);
 
           bindIntParameter(member_insert, ":prot", md->protection());
           bindIntParameter(member_insert, ":virt", md->virtualness());
@@ -1851,8 +1850,8 @@ static void generateSqlite3ForClass(const ClassDef *cd)
     {
       struct Refid base_refid = insertRefid(bcd->classDef->getOutputFileBase());
       struct Refid derived_refid = insertRefid(cd->getOutputFileBase());
-      bindIntParameter(compoundref_insert,":base_refid", base_refid.rowid);
-      bindIntParameter(compoundref_insert,":derived_refid", derived_refid.rowid);
+      bindIntParameter(compoundref_insert,":base_rowid", base_refid.rowid);
+      bindIntParameter(compoundref_insert,":derived_rowid", derived_refid.rowid);
       bindIntParameter(compoundref_insert,":prot",bcd->prot);
       bindIntParameter(compoundref_insert,":virt",bcd->virt);
       step(compoundref_insert);
@@ -1868,8 +1867,8 @@ static void generateSqlite3ForClass(const ClassDef *cd)
     {
       struct Refid derived_refid = insertRefid(bcd->classDef->getOutputFileBase());
       struct Refid base_refid = insertRefid(cd->getOutputFileBase());
-      bindIntParameter(compoundref_insert,":base_refid", base_refid.rowid);
-      bindIntParameter(compoundref_insert,":derived_refid", derived_refid.rowid);
+      bindIntParameter(compoundref_insert,":base_rowid", base_refid.rowid);
+      bindIntParameter(compoundref_insert,":derived_rowid", derived_refid.rowid);
       bindIntParameter(compoundref_insert,":prot",bcd->prot);
       bindIntParameter(compoundref_insert,":virt",bcd->virt);
       step(compoundref_insert);
