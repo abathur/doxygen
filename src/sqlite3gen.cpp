@@ -73,7 +73,7 @@ const char * table_schema[][2] = {
       "\tproject_name       TEXT NOT NULL,\n"
       "\tproject_number     TEXT,\n"
       "\tproject_brief      TEXT\n"
-      ");"
+    ");"
   },
   //TODO: We could document all config options (probably with a separate config table), but I think this idea can wait until someone actually demonstrates a clear need.
   { "includes",
@@ -85,7 +85,7 @@ const char * table_schema[][2] = {
       "\tdst_id       INTEGER NOT NULL REFERENCES file, -- File id of the includee.\n"
       /* In theory we could include name here to be informationally equivalent with the XML, but I don't see an obvious use for it. */
       "\tUNIQUE(local, src_id, dst_id) ON CONFLICT IGNORE\n"
-      ");"
+    ");"
   },
   { "contains",
     "CREATE TABLE IF NOT EXISTS contains (\n"
@@ -93,7 +93,7 @@ const char * table_schema[][2] = {
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tinner_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
-      ");"
+    ");"
   },
   /* TODO: File can also share rowids with refid/compounddef/def. (It could
    *       even collapse into that table...)
@@ -112,14 +112,14 @@ const char * table_schema[][2] = {
       "\t-- Names of source files and includes.\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tname         TEXT NOT NULL\n"
-      ");"
+    ");"
   },
   { "refid",
     "CREATE TABLE IF NOT EXISTS refid (\n"
       "\t-- Distinct refid for all documented entities.\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\trefid        TEXT NOT NULL UNIQUE\n"
-      ");"
+    ");"
   },
   { "xrefs",
     "CREATE TABLE IF NOT EXISTS xrefs (\n"
@@ -131,7 +131,7 @@ const char * table_schema[][2] = {
       "\tcontext      TEXT NOT NULL, -- inline, argument, initializer\n"
       "\t-- Just need to know they link; ignore duplicates.\n"
       "\tUNIQUE(src_rowid, dst_rowid, context) ON CONFLICT IGNORE\n"
-      ");\n"
+    ");\n"
   },
   { "memberdef",
     "CREATE TABLE IF NOT EXISTS memberdef (\n"
@@ -192,7 +192,7 @@ const char * table_schema[][2] = {
       "\tbriefdescription     TEXT,\n"
       "\tinbodydescription    TEXT,\n"
       "\tFOREIGN KEY (rowid) REFERENCES refid (rowid)\n"
-      ");"
+    ");"
   },
   { "member",
     "CREATE TABLE IF NOT EXISTS member (\n"
@@ -205,16 +205,16 @@ const char * table_schema[][2] = {
       "\tvirt             INTEGER NOT NULL,\n"
       "\tambiguityscope   TEXT,\n"
       "\tUNIQUE(scope_rowid, memberdef_rowid)\n"
-      ");"
+    ");"
   },
   { "reimplements",
     "CREATE TABLE IF NOT EXISTS reimplements (\n"
       "\t-- Inherited member reimplmentation relations.\n"
-      "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
-      "\tmemberdef_rowid    INTEGER NOT NULL REFERENCES memberdef, -- reimplementing memberdef id.\n"
+      "\trowid                  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
+      "\tmemberdef_rowid        INTEGER NOT NULL REFERENCES memberdef, -- reimplementing memberdef id.\n"
       "\treimplemented_rowid    INTEGER NOT NULL REFERENCES memberdef, -- reimplemented memberdef id.\n"
       "\tUNIQUE(memberdef_rowid, reimplemented_rowid) ON CONFLICT IGNORE\n"
-      ");\n"
+    ");\n"
   },
   { "compounddef",
     "CREATE TABLE IF NOT EXISTS compounddef (\n"
@@ -230,7 +230,7 @@ const char * table_schema[][2] = {
       "\tdetaileddescription  TEXT,\n"
       "\tbriefdescription     TEXT,\n"
       "\tFOREIGN KEY (rowid) REFERENCES refid (rowid)\n"
-      ");"
+    ");"
   },
   { "compoundref",
     "CREATE TABLE IF NOT EXISTS compoundref (\n"
@@ -241,7 +241,7 @@ const char * table_schema[][2] = {
       "\tprot           INTEGER NOT NULL,\n"
       "\tvirt           INTEGER NOT NULL,\n"
       "\tUNIQUE(base_rowid, derived_rowid)\n"
-      ");"
+    ");"
   },
   { "param",
     "CREATE TABLE IF NOT EXISTS param (\n"
@@ -254,7 +254,7 @@ const char * table_schema[][2] = {
       "\tarray        TEXT,\n"
       "\tdefval       TEXT,\n"
       "\tbriefdescription TEXT\n"
-      ");"
+    ");"
     "CREATE UNIQUE INDEX idx_param ON param\n"
       "\t(type, defname);"
   },
@@ -264,7 +264,7 @@ const char * table_schema[][2] = {
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tmemberdef_id INTEGER NOT NULL REFERENCES memberdef,\n"
       "\tparam_id     INTEGER NOT NULL REFERENCES param\n"
-      ");"
+    ");"
   },
 };
   const char * view_schema[][2] = {
@@ -443,240 +443,286 @@ struct SqlStmt {
    prepareStatements(). If sqlite3 is segfaulting (especially in
    sqlite3_clear_bindings()), using an un-prepared statement may
    be the cause. */
-SqlStmt meta_insert = { "INSERT INTO meta "
+SqlStmt meta_insert = {
+  "INSERT INTO meta "
     "( doxygen_version, schema_version, generated_at, generated_on, project_name, project_number, project_brief ) "
-    "VALUES "
+  "VALUES "
     "(:doxygen_version,:schema_version,:generated_at,:generated_on,:project_name,:project_number,:project_brief )"
-    ,NULL
-};
-//////////////////////////////////////////////////////
-SqlStmt incl_insert = { "INSERT INTO includes "
-  "( local, src_id, dst_id ) "
-    "VALUES "
-    "(:local,:src_id,:dst_id )"
-    ,NULL
-};
-SqlStmt incl_select = { "SELECT COUNT(*) FROM includes WHERE "
-  "local=:local AND src_id=:src_id AND dst_id=:dst_id"
-    ,NULL
-};
-//////////////////////////////////////////////////////
-SqlStmt contains_insert={"INSERT INTO contains "
-    "( inner_rowid, outer_rowid )"
-    "VALUES "
-    "(:inner_rowid,:outer_rowid )"
-    ,NULL
-};
-//////////////////////////////////////////////////////
-SqlStmt file_select = {"SELECT rowid FROM file WHERE name=:name"
   ,NULL
 };
-SqlStmt file_insert = {"INSERT INTO file "
-  "( name )"
-    "VALUES "
+//////////////////////////////////////////////////////
+SqlStmt incl_insert = {
+  "INSERT INTO includes "
+    "( local, src_id, dst_id ) "
+  "VALUES "
+    "(:local,:src_id,:dst_id )"
+  ,NULL
+};
+SqlStmt incl_select = {
+  "SELECT COUNT(*) FROM includes WHERE "
+  "local=:local AND src_id=:src_id AND dst_id=:dst_id"
+  ,NULL
+};
+//////////////////////////////////////////////////////
+SqlStmt contains_insert={
+  "INSERT INTO contains "
+    "( inner_rowid, outer_rowid )"
+  "VALUES "
+    "(:inner_rowid,:outer_rowid )"
+  ,NULL
+};
+//////////////////////////////////////////////////////
+SqlStmt file_select = {
+  "SELECT rowid FROM file WHERE name=:name"
+  ,NULL
+};
+SqlStmt file_insert = {
+  "INSERT INTO file "
+    "( name )"
+  "VALUES "
     "(:name )"
-    ,NULL
+  ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt refid_select =  {"SELECT rowid FROM refid WHERE "
-  "refid=:refid"
-    ,NULL
+SqlStmt refid_select =  {
+  "SELECT rowid FROM refid WHERE refid=:refid"
+  ,NULL
 };
-SqlStmt refid_insert = {"INSERT INTO refid "
-  "( refid )"
-    "VALUES "
+SqlStmt refid_insert = {
+  "INSERT INTO refid "
+    "( refid )"
+  "VALUES "
     "(:refid )"
-    ,NULL
+  ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt xrefs_insert= {"INSERT INTO xrefs "
+SqlStmt xrefs_insert= {
+  "INSERT INTO xrefs "
     "( src_rowid, dst_rowid, context )"
-    "VALUES "
+  "VALUES "
     "(:src_rowid,:dst_rowid,:context )"
-    ,NULL
+  ,NULL
 };//////////////////////////////////////////////////////
-SqlStmt reimplements_insert= {"INSERT INTO reimplements "
-  "( memberdef_rowid, reimplemented_rowid )"
-    "VALUES "
+SqlStmt reimplements_insert= {
+  "INSERT INTO reimplements "
+    "( memberdef_rowid, reimplemented_rowid )"
+  "VALUES "
     "(:memberdef_rowid,:reimplemented_rowid )"
-    ,NULL
+  ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt memberdef_exists={"SELECT EXISTS (SELECT * FROM memberdef WHERE rowid = :rowid)"
-    ,NULL
+SqlStmt memberdef_exists={
+  "SELECT EXISTS (SELECT * FROM memberdef WHERE rowid = :rowid)"
+  ,NULL
 };
 
-SqlStmt memberdef_incomplete={"SELECT EXISTS (SELECT * FROM memberdef WHERE rowid = :rowid AND inline != 2 AND inline != :new_inline)"
-    ,NULL
+SqlStmt memberdef_incomplete={
+  "SELECT EXISTS ("
+    "SELECT * FROM memberdef WHERE "
+    "rowid = :rowid AND inline != 2 AND inline != :new_inline"
+  ")"
+  ,NULL
 };
 
-SqlStmt memberdef_insert={"INSERT INTO memberdef "
-    "("
-      "rowid,"
-      "name,"
-      "definition,"
-      "type,"
-      "argsstring,"
-      "scope,"
-      "initializer,"
-      "bitfield,"
-      "read,"
-      "write,"
-      "prot,"
-      "static,"
-      "const,"
-      "explicit,"
-      "inline,"
-      "final,"
-      "sealed,"
-      "new,"
-      "optional,"
-      "required,"
-      "volatile,"
-      "virt,"
-      "mutable,"
-      "initonly,"
-      "attribute,"
-      "property,"
-      "readonly,"
-      "bound,"
-      "constrained,"
-      "transient,"
-      "maybevoid,"
-      "maybedefault,"
-      "maybeambiguous,"
-      "readable,"
-      "writable,"
-      "gettable,"
-      "protectedsettable,"
-      "protectedgettable,"
-      "settable,"
-      "privatesettable,"
-      "privategettable,"
-      "accessor,"
-      "addable,"
-      "removable,"
-      "raisable,"
-      "kind,"
-      "bodystart,"
-      "bodyend,"
-      "bodyfile_id,"
-      "file_id,"
-      "line,"
-      "column,"
-      "detaileddescription,"
-      "briefdescription,"
-      "inbodydescription"
-    ")"
-    "VALUES "
-    "("
-      ":rowid,"
-      ":name,"
-      ":definition,"
-      ":type,"
-      ":argsstring,"
-      ":scope,"
-      ":initializer,"
-      ":bitfield,"
-      ":read,"
-      ":write,"
-      ":prot,"
-      ":static,"
-      ":const,"
-      ":explicit,"
-      ":inline,"
-      ":final,"
-      ":sealed,"
-      ":new,"
-      ":optional,"
-      ":required,"
-      ":volatile,"
-      ":virt,"
-      ":mutable,"
-      ":initonly,"
-      ":attribute,"
-      ":property,"
-      ":readonly,"
-      ":bound,"
-      ":constrained,"
-      ":transient,"
-      ":maybevoid,"
-      ":maybedefault,"
-      ":maybeambiguous,"
-      ":readable,"
-      ":writable,"
-      ":gettable,"
-      ":protectedsettable,"
-      ":protectedgettable,"
-      ":settable,"
-      ":privatesettable,"
-      ":privategettable,"
-      ":accessor,"
-      ":addable,"
-      ":removable,"
-      ":raisable,"
-      ":kind,"
-      ":bodystart,"
-      ":bodyend,"
-      ":bodyfile_id,"
-      ":file_id,"
-      ":line,"
-      ":column,"
-      ":detaileddescription,"
-      ":briefdescription,"
-      ":inbodydescription"
-    ")"
-    ,NULL
+SqlStmt memberdef_insert={
+  "INSERT INTO memberdef "
+  "("
+    "rowid,"
+    "name,"
+    "definition,"
+    "type,"
+    "argsstring,"
+    "scope,"
+    "initializer,"
+    "bitfield,"
+    "read,"
+    "write,"
+    "prot,"
+    "static,"
+    "const,"
+    "explicit,"
+    "inline,"
+    "final,"
+    "sealed,"
+    "new,"
+    "optional,"
+    "required,"
+    "volatile,"
+    "virt,"
+    "mutable,"
+    "initonly,"
+    "attribute,"
+    "property,"
+    "readonly,"
+    "bound,"
+    "constrained,"
+    "transient,"
+    "maybevoid,"
+    "maybedefault,"
+    "maybeambiguous,"
+    "readable,"
+    "writable,"
+    "gettable,"
+    "protectedsettable,"
+    "protectedgettable,"
+    "settable,"
+    "privatesettable,"
+    "privategettable,"
+    "accessor,"
+    "addable,"
+    "removable,"
+    "raisable,"
+    "kind,"
+    "bodystart,"
+    "bodyend,"
+    "bodyfile_id,"
+    "file_id,"
+    "line,"
+    "column,"
+    "detaileddescription,"
+    "briefdescription,"
+    "inbodydescription"
+  ")"
+  "VALUES "
+  "("
+    ":rowid,"
+    ":name,"
+    ":definition,"
+    ":type,"
+    ":argsstring,"
+    ":scope,"
+    ":initializer,"
+    ":bitfield,"
+    ":read,"
+    ":write,"
+    ":prot,"
+    ":static,"
+    ":const,"
+    ":explicit,"
+    ":inline,"
+    ":final,"
+    ":sealed,"
+    ":new,"
+    ":optional,"
+    ":required,"
+    ":volatile,"
+    ":virt,"
+    ":mutable,"
+    ":initonly,"
+    ":attribute,"
+    ":property,"
+    ":readonly,"
+    ":bound,"
+    ":constrained,"
+    ":transient,"
+    ":maybevoid,"
+    ":maybedefault,"
+    ":maybeambiguous,"
+    ":readable,"
+    ":writable,"
+    ":gettable,"
+    ":protectedsettable,"
+    ":protectedgettable,"
+    ":settable,"
+    ":privatesettable,"
+    ":privategettable,"
+    ":accessor,"
+    ":addable,"
+    ":removable,"
+    ":raisable,"
+    ":kind,"
+    ":bodystart,"
+    ":bodyend,"
+    ":bodyfile_id,"
+    ":file_id,"
+    ":line,"
+    ":column,"
+    ":detaileddescription,"
+    ":briefdescription,"
+    ":inbodydescription"
+  ")"
+  ,NULL
 };
 /* We have a slightly different need than the XML here. The XML can have two memberdef nodes with the same refid to document the declaration and the definition. This doesn't play very nice with a referential model. It isn't a big issue if only one is documented, but in case both are, we'll fall back on this kludge to combine them in a single row... */
-SqlStmt memberdef_update_decl={"UPDATE memberdef SET "
-      "inline = :inline,"
-      "file_id = :file_id,"
-      "line = :line,"
-      "column = :column,"
-      "detaileddescription = 'Declaration: ' || :detaileddescription || 'Definition: ' || detaileddescription,"
-      "briefdescription = 'Declaration: ' || :briefdescription || 'Definition: ' || briefdescription,"
-      "inbodydescription = 'Declaration: ' || :inbodydescription || 'Definition: ' || inbodydescription"
-      " WHERE rowid = :rowid"
-    ,NULL
+SqlStmt memberdef_update_decl={
+  "UPDATE memberdef SET "
+    "inline = :inline,"
+    "file_id = :file_id,"
+    "line = :line,"
+    "column = :column,"
+    "detaileddescription = 'Declaration: ' || :detaileddescription || 'Definition: ' || detaileddescription,"
+    "briefdescription = 'Declaration: ' || :briefdescription || 'Definition: ' || briefdescription,"
+    "inbodydescription = 'Declaration: ' || :inbodydescription || 'Definition: ' || inbodydescription "
+  "WHERE rowid = :rowid"
+  ,NULL
 };
-SqlStmt memberdef_update_def={"UPDATE memberdef SET "
-      "inline = :inline,"
-      "bodystart = :bodystart,"
-      "bodyend = :bodyend,"
-      "bodyfile_id = :bodyfile_id,"
-      "detaileddescription = 'Declaration: ' || detaileddescription || 'Definition: ' || :detaileddescription,"
-      "briefdescription = 'Declaration: ' || briefdescription || 'Definition: ' || :briefdescription,"
-      "inbodydescription = 'Declaration: ' || inbodydescription || 'Definition: ' || :inbodydescription"
-      " WHERE rowid = :rowid"
-    ,NULL
+SqlStmt memberdef_update_def={
+  "UPDATE memberdef SET "
+    "inline = :inline,"
+    "bodystart = :bodystart,"
+    "bodyend = :bodyend,"
+    "bodyfile_id = :bodyfile_id,"
+    "detaileddescription = 'Declaration: ' || detaileddescription || 'Definition: ' || :detaileddescription,"
+    "briefdescription = 'Declaration: ' || briefdescription || 'Definition: ' || :briefdescription,"
+    "inbodydescription = 'Declaration: ' || inbodydescription || 'Definition: ' || :inbodydescription "
+  "WHERE rowid = :rowid"
+  ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt member_insert={"INSERT INTO member "
+SqlStmt member_insert={
+  "INSERT INTO member "
     "( scope_rowid, memberdef_rowid, prot, virt, ambiguityscope ) "
-    "VALUES "
-    "(:scope_rowid, :memberdef_rowid, :prot, :virt, :ambiguityscope )"
-    ,NULL
+  "VALUES "
+    "(:scope_rowid,:memberdef_rowid,:prot,:virt,:ambiguityscope )"
+  ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt compounddef_insert={"INSERT INTO compounddef "
-    "( rowid, name, title, kind, prot, file_id, line, column, briefdescription, detaileddescription ) "
-    "VALUES "
-    "(:rowid, :name,:title,:kind,:prot,:file_id,:line,:column,:briefdescription,:detaileddescription )"
-    ,NULL
+SqlStmt compounddef_insert={
+  "INSERT INTO compounddef "
+  "("
+    "rowid,"
+    "name,"
+    "title,"
+    "kind,"
+    "prot,"
+    "file_id,"
+    "line,"
+    "column,"
+    "briefdescription,"
+    "detaileddescription"
+  ")"
+  "VALUES "
+  "("
+    ":rowid,"
+    ":name,"
+    ":title,"
+    ":kind,"
+    ":prot,"
+    ":file_id,"
+    ":line,"
+    ":column,"
+    ":briefdescription,"
+    ":detaileddescription"
+  ")"
+  ,NULL
 };
-SqlStmt compounddef_exists={"SELECT EXISTS (SELECT * FROM compounddef WHERE rowid = :rowid)"
-    ,NULL
+SqlStmt compounddef_exists={
+  "SELECT EXISTS ("
+    "SELECT * FROM compounddef WHERE rowid = :rowid"
+  ")"
+  ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt compoundref_insert={"INSERT INTO compoundref "
+SqlStmt compoundref_insert={
+  "INSERT INTO compoundref "
     "( base_rowid, derived_rowid, prot, virt ) "
-    "VALUES "
+  "VALUES "
     "(:base_rowid,:derived_rowid,:prot,:virt )"
-    ,NULL
+  ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt param_select = { "SELECT rowid FROM  param WHERE "
+SqlStmt param_select = {
+  "SELECT rowid FROM param WHERE "
     "(attributes IS NULL OR attributes=:attributes) AND "
     "(type IS NULL OR type=:type) AND "
     "(declname IS NULL OR declname=:declname) AND "
@@ -684,20 +730,22 @@ SqlStmt param_select = { "SELECT rowid FROM  param WHERE "
     "(array IS NULL OR array=:array) AND "
     "(defval IS NULL OR defval=:defval) AND "
     "(briefdescription IS NULL OR briefdescription=:briefdescription)"
-    ,NULL
+  ,NULL
 };
-SqlStmt param_insert = { "INSERT INTO  param "
-  "( attributes, type, declname, defname, array, defval, briefdescription ) "
-    "VALUES "
+SqlStmt param_insert = {
+  "INSERT INTO param "
+    "( attributes, type, declname, defname, array, defval, briefdescription ) "
+  "VALUES "
     "(:attributes,:type,:declname,:defname,:array,:defval,:briefdescription)"
-    ,NULL
+  ,NULL
 };
 //////////////////////////////////////////////////////
-SqlStmt memberdef_param_insert={ "INSERT INTO  memberdef_param "
+SqlStmt memberdef_param_insert={
+  "INSERT INTO memberdef_param "
     "( memberdef_id, param_id)"
-    "VALUES "
+  "VALUES "
     "(:memberdef_id,:param_id)"
-    ,NULL
+  ,NULL
 };
 
 
