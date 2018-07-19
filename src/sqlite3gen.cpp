@@ -61,20 +61,21 @@ const char * table_schema[][2] = {
   /* TABLES */
   { "meta",
     "CREATE TABLE IF NOT EXISTS meta (\n"
-      "\t-- doxygen info \n"
+      "\t-- Information about this db and how it was generated.\n"
+      "\t-- Doxygen info\n"
       "\tdoxygen_version    TEXT PRIMARY KEY NOT NULL,\n"
-      //TODO: I'm of two minds about the schema. I guess tools could just care about the doxygen version, and derive their assumptions about behavior from that. But, Doxygen's version is likely to rollover much faster than the schema, and at least until it becomes a core output format, we might want to make fairly large schema changes even on minor iterations for Doxygen itself. If these tools just track a predefined semver schema version that can iterate independently, it *might* not be as hard to keep them in sync?
-      "\tschema_version     TEXT NOT NULL,\n"
-      "\t-- run info \n"
+      // Doxygen's version is likely to rollover much faster than the schema, and at least until it becomes a core output format, we might want to make fairly large schema changes even on minor iterations for Doxygen itself. If these tools just track a predefined semver schema version that can iterate independently, it *might* not be as hard to keep them in sync?
+      "\tschema_version     TEXT NOT NULL, -- Schema-specific semver\n"
+      "\t-- run info\n"
       "\tgenerated_at       TEXT NOT NULL,\n"
       "\tgenerated_on       TEXT NOT NULL,\n"
-      "\t-- project info \n"
+      "\t-- project info\n"
       "\tproject_name       TEXT NOT NULL,\n"
       "\tproject_number     TEXT,\n"
       "\tproject_brief      TEXT\n"
-      //TODO: to some degree this is spilling over into the question of whether we need to document broader config options? I guess I could make a config table and read all of the keys in, but I think this idea can wait until there's actually a clear need.
       ");"
   },
+  //TODO: We could document all config options (probably with a separate config table), but I think this idea can wait until someone actually demonstrates a clear need.
   { "includes",
     "CREATE TABLE IF NOT EXISTS includes (\n"
       "\t-- #include relations.\n"
@@ -82,6 +83,7 @@ const char * table_schema[][2] = {
       "\tlocal        INTEGER NOT NULL,\n"
       "\tsrc_id       INTEGER NOT NULL REFERENCES file, -- File id of the includer.\n"
       "\tdst_id       INTEGER NOT NULL REFERENCES file, -- File id of the includee.\n"
+      /* In theory we could include name here to be informationally equivalent with the XML, but I don't see an obvious use for it. */
       "\tUNIQUE(local, src_id, dst_id) ON CONFLICT IGNORE\n"
       ");"
   },
@@ -93,6 +95,18 @@ const char * table_schema[][2] = {
       "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
       ");"
   },
+  /* TODO: File can also share rowids with refid/compounddef/def. (It could
+   *       even collapse into that table...)
+   *
+   * I took a first swing at this by changing insertFile() to:
+   * - accept a FileDef
+   * - make its own call to insertRefid
+   * - return a refid struct.
+   *
+   * I rolled this back when I had trouble getting a FileDef for all types (PageDef in particular).
+   *
+   * Note: all colums referencing file would need an update.
+   */
   { "file",
     "CREATE TABLE IF NOT EXISTS file (\n"
       "\t-- Names of source files and includes.\n"
@@ -107,14 +121,15 @@ const char * table_schema[][2] = {
       "\trefid        TEXT NOT NULL UNIQUE\n"
       ");"
   },
-  /* xrefs table combines the xml <referencedby> and <references> nodes */
   { "xrefs",
     "CREATE TABLE IF NOT EXISTS xrefs (\n"
-      "\t-- Cross reference relation.\n"
+      "\t-- Cross-reference relation\n"
+      "\t-- (combines xml <referencedby> and <references> nodes).\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tsrc_rowid    INTEGER NOT NULL REFERENCES refid, -- referrer id.\n"
       "\tdst_rowid    INTEGER NOT NULL REFERENCES refid, -- referee id.\n"
       "\tcontext      TEXT NOT NULL, -- inline, argument, initializer\n"
+      "\t-- Just need to know they link; ignore duplicates.\n"
       "\tUNIQUE(src_rowid, dst_rowid, context) ON CONFLICT IGNORE\n"
       ");\n"
   },
@@ -135,8 +150,7 @@ const char * table_schema[][2] = {
       "\tstatic               INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\tconst                INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\texplicit             INTEGER DEFAULT 0, -- 0:no 1:yes\n"
-      // 2:both below used after we have encountered both member forms
-      "\tinline               INTEGER DEFAULT 0, -- 0:no 1:yes 2:both\n"
+      "\tinline               INTEGER DEFAULT 0, -- 0:no 1:yes 2:both (set after encountering inline and not-inline\n"
       "\tfinal                INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\tsealed               INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\tnew                  INTEGER DEFAULT 0, -- 0:no 1:yes\n"
@@ -167,25 +181,23 @@ const char * table_schema[][2] = {
       "\taddable              INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\tremovable            INTEGER DEFAULT 0, -- 0:no 1:yes\n"
       "\traisable             INTEGER DEFAULT 0, -- 0:no 1:yes\n"
-      /// @todo make a `kind' table
       "\tkind                 TEXT NOT NULL, -- 'macro definition' 'function' 'variable' 'typedef' 'enumeration' 'enumvalue' 'signal' 'slot' 'friend' 'dcop' 'property' 'event' 'interface' 'service'\n"
-      // string (from MemberDef::memberTypeName()) for easier introspection & interop
       "\tbodystart            INTEGER DEFAULT 0, -- starting line of definition\n"
       "\tbodyend              INTEGER DEFAULT 0, -- ending line of definition\n"
       "\tbodyfile_id          INTEGER DEFAULT 0 REFERENCES file, -- file of definition\n"
       "\tfile_id              INTEGER NOT NULL REFERENCES file,  -- file where this identifier is located\n"
       "\tline                 INTEGER NOT NULL,  -- line where this identifier is located\n"
       "\tcolumn               INTEGER NOT NULL,  -- column where this identifier is located\n"
-      /// @todo make a `detaileddescription' table
       "\tdetaileddescription  TEXT,\n"
       "\tbriefdescription     TEXT,\n"
       "\tinbodydescription    TEXT,\n"
       "\tFOREIGN KEY (rowid) REFERENCES refid (rowid)\n"
       ");"
   },
-  /* links memberdefs to individual containing compounds; roughly equivalent to the XML "listofallmembers" node. */
   { "member",
     "CREATE TABLE IF NOT EXISTS member (\n"
+      "\t-- Memberdef <-> containing compound relation.\n"
+      "\t-- Similar to XML listofallmembers.\n"
       "\trowid            INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tscope_rowid      INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tmemberdef_rowid  INTEGER NOT NULL REFERENCES memberdef,\n"
@@ -195,10 +207,9 @@ const char * table_schema[][2] = {
       "\tUNIQUE(scope_rowid, memberdef_rowid)\n"
       ");"
   },
-  /* reimplements table combines the xml <reimplementedby> and <reimplements> nodes */
   { "reimplements",
     "CREATE TABLE IF NOT EXISTS reimplements (\n"
-      "\t-- Cross reference relation.\n"
+      "\t-- Inherited member reimplmentation relations.\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tmemberdef_rowid    INTEGER NOT NULL REFERENCES memberdef, -- reimplementing memberdef id.\n"
       "\treimplemented_rowid    INTEGER NOT NULL REFERENCES memberdef, -- reimplemented memberdef id.\n"
@@ -207,11 +218,11 @@ const char * table_schema[][2] = {
   },
   { "compounddef",
     "CREATE TABLE IF NOT EXISTS compounddef (\n"
-      "\t-- class/struct definitions.\n"
+      "\t-- Class/struct definitions.\n"
       "\trowid                INTEGER PRIMARY KEY NOT NULL,\n"
       "\tname                 TEXT NOT NULL,\n"
       "\ttitle                TEXT,\n"
-      "\tkind                 TEXT NOT NULL,\n"
+      "\tkind                 TEXT NOT NULL, -- 'category' 'class' 'dir' 'enum' 'example' 'exception' 'file' 'group' 'interface' 'library' 'module' 'namespace' 'package' 'page' 'protocol' 'service' 'singleton' 'struct' 'type' 'union' 'unknown' ''\n" // yes, it can be an empty string
       "\tprot                 INTEGER,\n"
       "\tfile_id              INTEGER NOT NULL,\n"
       "\tline                 INTEGER NOT NULL,\n"
@@ -223,6 +234,7 @@ const char * table_schema[][2] = {
   },
   { "compoundref",
     "CREATE TABLE IF NOT EXISTS compoundref (\n"
+      "\t-- Inheritance relation.\n"
       "\trowid          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tbase_rowid     INTEGER NOT NULL REFERENCES compounddef,\n"
       "\tderived_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
@@ -257,7 +269,7 @@ const char * table_schema[][2] = {
 };
   const char * view_schema[][2] = {
   /* VIEWS */
-  // I think we actually want to do views AFTER we build the database, so that they can be indexed, but so we don't have to pay a performance penalty for inserts as we build.
+  // Set up views AFTER we build the database, so that they can be indexed, but so we don't have to pay a performance penalty for inserts as we build.
   {
     /*
     Makes all reference/relation tables easier to use. For example:
@@ -271,6 +283,8 @@ const char * table_schema[][2] = {
       - I think there's value in extending this to fulltext or levenshtein distance-driven lookup/search, but I'm avoiding these for now as it takes some effort to enable them.
     */
     "def",
+    "CREATE VIEW IF NOT EXISTS def (\n"
+      "\t-- Combined summary of all -def types for easier joins.\n"
       "\trowid,\n"
       "\trefid,\n"
       "\tkind,\n"
@@ -300,9 +314,6 @@ const char * table_schema[][2] = {
     "JOIN compounddef ON refid.rowid=compounddef.rowid;"
   },
   {
-    /*
-    Adding this to make relations easier to work with. The idea is that you can join this table to ref, compounddef, or memberdef, and get a summary view of which kinds of relation exist to/from this record. Instead of aggressively returning full data for all relations whether the user needs them or not, the consumer can use this table (and their own needs) to decide which relations to fetch.
-    */
     "inline_xrefs",
     "CREATE VIEW IF NOT EXISTS inline_xrefs (\n"
       "\t-- Crossrefs from inline member source.\n"
@@ -317,8 +328,6 @@ const char * table_schema[][2] = {
     "FROM xrefs where xrefs.context='inline';\n"
   },
   {
-    /*
-    */
     "argument_xrefs",
     "CREATE VIEW IF NOT EXISTS argument_xrefs (\n"
       "\t-- Crossrefs from member def/decl arguments\n"
@@ -333,8 +342,6 @@ const char * table_schema[][2] = {
     "FROM xrefs where xrefs.context='argument';\n"
   },
   {
-    /*
-    */
     "initializer_xrefs",
     "CREATE VIEW IF NOT EXISTS initializer_xrefs (\n"
       "\t-- Crossrefs from member initializers\n"
@@ -362,6 +369,8 @@ const char * table_schema[][2] = {
   {
     "rel",
     "CREATE VIEW IF NOT EXISTS rel (\n"
+      "\t-- Boolean indicator of relations available for a given entity.\n"
+      "\t-- Join to (compound-|member-)def to find fetch-worthy relations.\n"
       "\trowid,\n"
       "\treimplemented,\n"
       "\treimplements,\n"
@@ -432,7 +441,7 @@ struct SqlStmt {
 //////////////////////////////////////////////////////
 /* If you add a new statement below, make sure to add it to
    prepareStatements(). If sqlite3 is segfaulting (especially in
-   sqlite3_clear_bindings(), using an un-prepared statement may
+   sqlite3_clear_bindings()), using an un-prepared statement may
    be the cause. */
 SqlStmt meta_insert = { "INSERT INTO meta "
     "( doxygen_version, schema_version, generated_at, generated_on, project_name, project_number, project_brief ) "
@@ -1066,7 +1075,7 @@ static int initializeTables(sqlite3* db)
   int rc;
   sqlite3_stmt *stmt = 0;
 
-  msg("Initializing DB schema...\n");
+  msg("Initializing DB schema (tables)...\n");
   for (unsigned int k = 0; k < sizeof(table_schema) / sizeof(table_schema[0]); k++)
   {
     const char *q = table_schema[k][1];
@@ -1086,7 +1095,7 @@ static int initializeViews(sqlite3* db)
   int rc;
   sqlite3_stmt *stmt = 0;
 
-  msg("Initializing DB schema...\n");
+  msg("Initializing DB schema (views)...\n");
   for (unsigned int k = 0; k < sizeof(view_schema) / sizeof(view_schema[0]); k++)
   {
     const char *q = view_schema[k][1];
@@ -1367,7 +1376,8 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     }
 
     bindIntParameter(memberdef_update, ":rowid", refid.rowid);
-    bindIntParameter(memberdef_update,":inline", 2); // value 2 indicates we've seen "both" inline types.
+    // value 2 indicates we've seen "both" inline types.
+    bindIntParameter(memberdef_update,":inline", 2);
 
     /* in case both are used, append/prepend descriptions */
     getSQLDesc(memberdef_update,":briefdescription",md->briefDescription(),md);
