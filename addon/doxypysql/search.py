@@ -77,19 +77,19 @@ class Finder:
                 return " %s=?" %row
 
     def fileName(self,file_id):
-        if self.cn.execute("SELECT COUNT(*) FROM files WHERE rowid=?",[file_id]).fetchone()[0] > 1:
+        if self.cn.execute("SELECT COUNT(*) FROM file WHERE rowid=?",[file_id]).fetchone()[0] > 1:
             sys.stderr.write("WARNING: non-uniq fileid [%s]. Considering only the first match." % file_id)
 
-        for r in self.cn.execute("SELECT * FROM files WHERE rowid=?",[file_id]).fetchall():
+        for r in self.cn.execute("SELECT * FROM file WHERE rowid=?",[file_id]).fetchall():
                 return r['name']
 
         return ""
 
     def fileId(self,name):
-        if self.cn.execute("SELECT COUNT(*) FROM files WHERE"+self.match("name"),[name]).fetchone()[0] > 1:
+        if self.cn.execute("SELECT COUNT(*) FROM file WHERE"+self.match("name"),[name]).fetchone()[0] > 1:
             sys.stderr.write("WARNING: non-uniq file name [%s]. Considering only the first match." % name)
 
-        for r in self.cn.execute("SELECT rowid FROM files WHERE"+self.match("name"),[name]).fetchall():
+        for r in self.cn.execute("SELECT rowid FROM file WHERE"+self.match("name"),[name]).fetchall():
                 return r[0]
 
         return -1
@@ -105,7 +105,7 @@ class Finder:
 
         rowid = rowids[0]['rowid']
         cur = self.cn.cursor()
-        #TODO:SELECT rowid from refids where refid=refid
+        #TODO:SELECT rowid from refid where refid=refid
         for info in cur.execute("SELECT * FROM xrefs WHERE dst_rowid=?", [rowid]):
             item={}
             cur = self.cn.cursor()
@@ -135,7 +135,7 @@ class Finder:
 ###############################################################################
     def file(self):
         o=[]
-        for r in self.cn.execute("SELECT rowid,* FROM files WHERE"+self.match("name"),[self.name]).fetchall():
+        for r in self.cn.execute("SELECT rowid,* FROM file WHERE"+self.match("name"),[self.name]).fetchall():
             item={}
             item['name'] = r['name']
             item['id'] =   r['rowid']
@@ -185,7 +185,7 @@ class Finder:
         o=[]
         c=self.cn.execute('SELECT rowid FROM memberdef WHERE'+self.match("name"),[self.name])
         for r in c.fetchall():
-            #a=("SELECT * FROM params where id=(SELECT param_id FROM memberdef_params where memberdef_id=?",[memberdef_id])
+            #a=("SELECT * FROM param where id=(SELECT param_id FROM memberdef_param where memberdef_id=?",[memberdef_id])
             item={}
             item['id'] = r['id']
             o.append(item)
