@@ -1434,9 +1434,9 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 
     step(memberdef_update,TRUE);
 
-    //I don't think we need to repeat the params.
+    // don't think we need to repeat params; should have from first encounter
+    // TODO: make sure a test-case in the docset illustrates that this works on overloaded functions with more than one signature (I assume they'll have different refids and that it won't matter)
 
-    // TODO: probably worth turning this copypasta into a function to dedupe. I think we can't really know which duplicate will/won't have references to/from, so we'll repeat this out of caution.
     // + source references
     // The cross-references in initializers only work when both the src and dst
     // are defined.
@@ -1461,7 +1461,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
         insertMemberReference(rmd,md, "inline");
       }
     }
-    return; //TODO: may be worth breaking up into functions
+    return;
   }
 
   bindIntParameter(memberdef_insert,":rowid", refid.rowid);
@@ -1535,7 +1535,6 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
     bindIntParameter(memberdef_insert,":privatesettable",md->isPrivateSettable());
     bindIntParameter(memberdef_insert,":protectedsettable",md->isProtectedSettable());
 
-    //TODO:: This seems like a lot of work to find the accessor; I wonder if there's a shortcut?
     if (md->isAssign() || md->isCopy() || md->isRetain()
      || md->isStrong() || md->isWeak())
     {
@@ -1648,6 +1647,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
       bindIntParameter(memberdef_insert,":line",md->getDefLine());
       bindIntParameter(memberdef_insert,":column",md->getDefColumn());
 
+      // definitions also have bodyfile/start/end
       if (md->getStartBodyLine()!=-1)
       {
         int bodyfile_id = insertFile(md->getBodyDef()->absFilePath());
@@ -2224,7 +2224,6 @@ static void generateSqlite3ForPage(const PageDef *pd,bool isExample)
   {
     if (!pd->title().isEmpty() && pd->title().lower()!="notitle")
     {
-
       title = filterTitle(convertCharEntitiesToUTF8(Doxygen::mainPage->title()));
     }
     else
@@ -2237,7 +2236,6 @@ static void generateSqlite3ForPage(const PageDef *pd,bool isExample)
     SectionInfo *si = Doxygen::sectionDict->find(pd->name());
     if (si)
     {
-
       title = si->title;
     }
 
