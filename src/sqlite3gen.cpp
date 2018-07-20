@@ -2194,7 +2194,6 @@ static void generateSqlite3ForPage(const PageDef *pd,bool isExample)
   // + sub pages
   if (pd->isReference())        return; // skip external references.
 
-  //QCString kindName = isExample ? "example" : "page";
   QCString qrefid = pd->getOutputFileBase();
   if (pd->getGroupDef())
   {
@@ -2235,7 +2234,7 @@ static void generateSqlite3ForPage(const PageDef *pd,bool isExample)
   // + title
   bindTextParameter(compounddef_insert,":title",title,FALSE);
 
-  bindTextParameter(compounddef_insert,":kind", "page");
+  bindTextParameter(compounddef_insert,":kind", isExample ? "example" : "page");
 
   int file_id = insertFile(pd->getDefFileName());
 
