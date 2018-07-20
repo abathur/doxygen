@@ -2293,6 +2293,11 @@ void generateSqlite3()
   // + main page
   sqlite3 *db;
 
+  // TODO: better handle existing database:
+  // - choose a new name and proceed (if someone's not paying attention and has
+  //   a big project, they may waste a lot of space?
+  // - skip sqlite3 output, tell the user to move the old DB
+  // - delete the old DB and replace it
   db = openDbConnection();
   if (db==NULL)
   {
