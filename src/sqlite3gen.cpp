@@ -1712,22 +1712,12 @@ static void generateSqlite3Section( const Definition *d,
   if (ml==0) return;
   MemberListIterator mli(*ml);
   const MemberDef *md;
-  int count=0;
+
   for (mli.toFirst();(md=mli.current());++mli)
   {
     // namespace members are also inserted in the file scope, but
     // to prevent this duplication in the XML output, we filter those here.
     if (d->definitionType()!=Definition::TypeFile || md->getNamespaceDef()==0)
-    {
-      count++;
-    }
-  }
-  if (count==0) return; // empty list
-  for (mli.toFirst();(md=mli.current());++mli)
-  {
-    // namespace members are also inserted in the file scope, but
-    // to prevent this duplication in the XML output, we filter those here.
-    //if (d->definitionType()!=Definition::TypeFile || md->getNamespaceDef()==0)
     {
       generateSqlite3ForMember(md,d);
     }
