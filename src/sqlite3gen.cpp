@@ -92,7 +92,7 @@ const char * table_schema[][2] = {
       "\t-- inner/outer relations (file, namespace, dir, class, group, page)\n"
       "\trowid        INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,\n"
       "\tinner_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
-      "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef,\n"
+      "\touter_rowid  INTEGER NOT NULL REFERENCES compounddef\n"
     ");"
   },
   /* TODO: File can also share rowids with refid/compounddef/def. (It could
