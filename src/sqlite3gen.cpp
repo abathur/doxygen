@@ -203,7 +203,6 @@ const char * table_schema[][2] = {
       "\tmemberdef_rowid  INTEGER NOT NULL REFERENCES memberdef,\n"
       "\tprot             INTEGER NOT NULL,\n"
       "\tvirt             INTEGER NOT NULL,\n"
-      "\tambiguityscope   TEXT,\n"
       "\tUNIQUE(scope_rowid, memberdef_rowid)\n"
     ");"
   },
@@ -671,9 +670,9 @@ SqlStmt memberdef_update_def={
 //////////////////////////////////////////////////////
 SqlStmt member_insert={
   "INSERT INTO member "
-    "( scope_rowid, memberdef_rowid, prot, virt, ambiguityscope ) "
+    "( scope_rowid, memberdef_rowid, prot, virt ) "
   "VALUES "
-    "(:scope_rowid,:memberdef_rowid,:prot,:virt,:ambiguityscope )"
+    "(:scope_rowid,:memberdef_rowid,:prot,:virt )"
   ,NULL
 };
 //////////////////////////////////////////////////////
@@ -1038,6 +1037,20 @@ static void insertMemberDefineParams(int memberdef_id,const MemberDef *md, const
     }
 }
 
+static void associateMember(const MemberDef *md, struct Refid member_refid, struct Refid scope_refid)
+{
+  // TODO: below line to skip EnumValue only here to guard against recording refids and member records for enumvalues without ever actually documenting them as entities.
+  if (md->memberType()==MemberType_EnumValue) return;
+  if (md->name().at(0)!='@') // skip anonymous members
+  {
+    bindIntParameter(member_insert, ":scope_rowid", scope_refid.rowid);
+    bindIntParameter(member_insert, ":memberdef_rowid", member_refid.rowid);
+
+    bindIntParameter(member_insert, ":prot", md->protection());
+    bindIntParameter(member_insert, ":virt", md->virtualness());
+    step(member_insert);
+  }
+}
 
 static void stripQualifiers(QCString &typeStr)
 {
@@ -1354,7 +1367,7 @@ static void getSQLDesc(SqlStmt &s,const char *col,const char *value,const Defini
 ////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////
-static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
+static void generateSqlite3ForMember(const MemberDef *md, struct Refid scope_refid, const Definition *def)
 {
   // + declaration/definition arg lists
   // + reimplements
@@ -1382,6 +1395,8 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
   // memberdef
   QCString qrefid = md->getOutputFileBase() + "_1" + md->anchor();
   struct Refid refid = insertRefid(qrefid);
+
+  associateMember(md, refid, scope_refid);
 
   /* TODO: not 100% certain this is safe for all memberdef types */
   if(!refid.created && memberdefExists(refid) && memberdefIncomplete(refid, md)) // compacting duplicate defs
@@ -1705,6 +1720,7 @@ static void generateSqlite3ForMember(const MemberDef *md, const Definition *def)
 
 static void generateSqlite3Section( const Definition *d,
                       const MemberList *ml,
+                      struct Refid scope_refid,
                       const char * /*kind*/,
                       const char * /*header*/=0,
                       const char * /*documentation*/=0)
@@ -1719,16 +1735,15 @@ static void generateSqlite3Section( const Definition *d,
     // to prevent this duplication in the XML output, we filter those here.
     if (d->definitionType()!=Definition::TypeFile || md->getNamespaceDef()==0)
     {
-      generateSqlite3ForMember(md,d);
+      generateSqlite3ForMember(md, scope_refid, d);
     }
   }
 }
 
-static void associateAllMembers(const ClassDef *cd)
+static void associateAllClassMembers(const ClassDef *cd, struct Refid scope_refid)
 {
   if (cd->memberNameInfoSDict())
   {
-    struct Refid scope_refid = insertRefid(cd->getOutputFileBase());
     MemberNameInfoSDict::Iterator mnii(*cd->memberNameInfoSDict());
     MemberNameInfo *mni;
     for (mnii.toFirst();(mni=mnii.current());++mnii)
@@ -1737,30 +1752,9 @@ static void associateAllMembers(const ClassDef *cd)
       MemberInfo *mi;
       for (mii.toFirst();(mi=mii.current());++mii)
       {
-        const MemberDef *md=mi->memberDef;
-        if (md->name().at(0)!='@') // skip anonymous members
-        {
-          Protection prot = mi->prot;
-          Specifier virt=md->virtualness();
-          /* start preparing to insert */
-          QCString qmember_refid = md->getOutputFileBase() + "_1" +
-            md->anchor();
-
-
-          struct Refid member_refid = insertRefid(qmember_refid);
-
-          bindIntParameter(member_insert, ":scope_rowid", scope_refid.rowid);
-          bindIntParameter(member_insert, ":memberdef_rowid", member_refid.rowid);
-
-          bindIntParameter(member_insert, ":prot", md->protection());
-          bindIntParameter(member_insert, ":virt", md->virtualness());
-
-          if (!mi->ambiguityResolutionScope.isEmpty())
-          {
-            bindTextParameter(member_insert, ":ambiguityscope", mi->ambiguityResolutionScope);
-          }
-          step(member_insert);
-        }
+        MemberDef *md = mi->memberDef;
+        QCString qrefid = md->getOutputFileBase() + "_1" + md->anchor();
+        associateMember(md, insertRefid(qrefid), scope_refid);
       }
     }
   }
@@ -1883,7 +1877,7 @@ static void generateSqlite3ForClass(const ClassDef *cd)
     MemberGroup *mg;
     for (;(mg=mgli.current());++mgli)
     {
-      generateSqlite3Section(cd,mg->members(),"user-defined",mg->header(),
+      generateSqlite3Section(cd,mg->members(),refid,"user-defined",mg->header(),
           mg->documentation());
     }
   }
@@ -1896,10 +1890,10 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   {
     if ((ml->listType()&MemberListType_detailedLists)==0)
     {
-      generateSqlite3Section(cd,ml,"user-defined");//g_xmlSectionMapper.find(ml->listType()));
+      generateSqlite3Section(cd,ml,refid,"user-defined");//g_xmlSectionMapper.find(ml->listType()));
     }
   }
-  associateAllMembers(cd);
+  associateAllClassMembers(cd, refid);
 }
 
 static void generateSqlite3ForNamespace(const NamespaceDef *nd)
@@ -1945,7 +1939,7 @@ static void generateSqlite3ForNamespace(const NamespaceDef *nd)
     MemberGroup *mg;
     for (;(mg=mgli.current());++mgli)
     {
-      generateSqlite3Section(nd,mg->members(),"user-defined",mg->header(),
+      generateSqlite3Section(nd,mg->members(),refid,"user-defined",mg->header(),
           mg->documentation());
     }
   }
@@ -1957,7 +1951,7 @@ static void generateSqlite3ForNamespace(const NamespaceDef *nd)
   {
     if ((ml->listType()&MemberListType_declarationLists)!=0)
     {
-      generateSqlite3Section(nd,ml,"user-defined");//g_xmlSectionMapper.find(ml->listType()));
+      generateSqlite3Section(nd,ml,refid,"user-defined");//g_xmlSectionMapper.find(ml->listType()));
     }
   }
 }
@@ -2058,7 +2052,7 @@ static void generateSqlite3ForFile(const FileDef *fd)
     MemberGroup *mg;
     for (;(mg=mgli.current());++mgli)
     {
-      generateSqlite3Section(fd,mg->members(),"user-defined",mg->header(),
+      generateSqlite3Section(fd,mg->members(),refid,"user-defined",mg->header(),
           mg->documentation());
     }
   }
@@ -2070,7 +2064,7 @@ static void generateSqlite3ForFile(const FileDef *fd)
   {
     if ((ml->listType()&MemberListType_declarationLists)!=0)
     {
-      generateSqlite3Section(fd,ml,"user-defined");//g_xmlSectionMapper.find(ml->listType()));
+      generateSqlite3Section(fd,ml,refid,"user-defined");//g_xmlSectionMapper.find(ml->listType()));
     }
   }
 }
@@ -2131,7 +2125,7 @@ static void generateSqlite3ForGroup(const GroupDef *gd)
     MemberGroup *mg;
     for (;(mg=mgli.current());++mgli)
     {
-      generateSqlite3Section(gd,mg->members(),"user-defined",mg->header(),
+      generateSqlite3Section(gd,mg->members(),refid,"user-defined",mg->header(),
           mg->documentation());
     }
   }
@@ -2143,7 +2137,7 @@ static void generateSqlite3ForGroup(const GroupDef *gd)
   {
     if ((ml->listType()&MemberListType_declarationLists)!=0)
     {
-      generateSqlite3Section(gd,ml,"user-defined");
+      generateSqlite3Section(gd,ml,refid,"user-defined");
     }
   }
 }
