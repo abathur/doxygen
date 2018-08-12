@@ -827,18 +827,18 @@ static int step(SqlStmt &s,bool getRowId=FALSE, bool select=FALSE)
   return rowid;
 }
 
-static int insertFile(const char* name)
+static int insertFile(QCString name)
 {
   int rowid=-1;
   if (name==0) return rowid;
 
   name = stripFromPath(name);
 
-  bindTextParameter(file_select,":name",name,FALSE);
+  bindTextParameter(file_select,":name",name.data(),FALSE);
   rowid=step(file_select,TRUE,TRUE);
   if (rowid==0)
   {
-    bindTextParameter(file_insert,":name",name,FALSE);
+    bindTextParameter(file_insert,":name",name.data(),FALSE);
     rowid=step(file_insert,TRUE);
   }
   return rowid;
