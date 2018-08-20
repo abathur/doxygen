@@ -1784,8 +1784,6 @@ static void generateSqlite3ForClass(const ClassDef *cd)
   if (cd->name().find('@')!=-1) return; // skip anonymous compounds.
   if (cd->templateMaster()!=0)  return; // skip generated template instances.
 
-  msg("Generating Sqlite3 output for class %s\n",cd->name().data());
-
   struct Refid refid = insertRefid(cd->getOutputFileBase());
   if(!refid.created && compounddefExists(refid)){return;}// in theory we can omit a class that already has a refid--unless there are conditions under which we may encounter the class refid before parsing the class? Might want to create a test or assertion for this?
 
