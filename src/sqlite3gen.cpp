@@ -1999,6 +1999,12 @@ static void generateSqlite3ForFile(const FileDef *fd)
     QListIterator<IncludeInfo> ili(*fd->includeFileList());
     for (ili.toFirst();(ii=ili.current());++ili)
     {
+      if(!ii->fileDef)
+      {
+        // no fileDef; the rest of this would fail
+        // I assume these are unresolvable includes?
+        continue;
+      }
       int src_id=insertFile(fd->absFilePath());
       int dst_id=insertFile(ii->fileDef->absFilePath());
       bindIntParameter(incl_select,":local",ii->local);
@@ -2019,6 +2025,13 @@ static void generateSqlite3ForFile(const FileDef *fd)
     QListIterator<IncludeInfo> ili(*fd->includedByFileList());
     for (ili.toFirst();(ii=ili.current());++ili)
     {
+      if(!ii->fileDef)
+      {
+        // no fileDef; the rest of this would fail
+        // I assume these are unresolvable includes?
+        // adding this one because XML does, but it seems less likely that there are actually any unresolved "includedbys" than that there's an unresolved "includes". That said, this was a nightmare to hunt down and superstition is probably better than repeating the process later.
+        continue;
+      }
       int src_id=insertFile(ii->fileDef->absFilePath());
       int dst_id=insertFile(fd->absFilePath());
       bindIntParameter(incl_select,":local",ii->local);
