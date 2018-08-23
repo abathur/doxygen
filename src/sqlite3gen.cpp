@@ -13,6 +13,7 @@
  *
  */
 
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "settings.h"
@@ -2269,6 +2270,7 @@ static sqlite3* openDbConnection()
   QDir sqlite3Dir(outputDirectory);
   sqlite3 *db;
   int rc;
+  struct stat buf;
 
   rc = sqlite3_initialize();
   if (rc != SQLITE_OK)
@@ -2276,6 +2278,15 @@ static sqlite3* openDbConnection()
     msg("sqlite3_initialize failed\n");
     return NULL;
   }
+
+
+  if (stat (outputDirectory+"/doxygen_sqlite3.db", &buf) == 0)
+  {
+    msg("doxygen_sqlite3.db already exists! aborting sqlite3 output generation!\n");
+    msg("If you wish to re-generate the database, remove or archive the existing copy first.\n");
+    return NULL;
+  }
+
   rc = sqlite3_open_v2(outputDirectory+"/doxygen_sqlite3.db", &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
   if (rc != SQLITE_OK)
   {
@@ -2298,11 +2309,6 @@ void generateSqlite3()
   // + main page
   sqlite3 *db;
 
-  // TODO: better handle existing database:
-  // - choose a new name and proceed (if someone's not paying attention and has
-  //   a big project, they may waste a lot of space?
-  // - skip sqlite3 output, tell the user to move the old DB
-  // - delete the old DB and replace it
   db = openDbConnection();
   if (db==NULL)
   {
