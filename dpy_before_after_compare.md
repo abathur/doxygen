@@ -1,4 +1,11 @@
-This is a lightly-edited terminal log of an informal before/after test I did on Adrian's doxypysql.py client. First, I used Doxygen's master branch to generate doxygen_docs/ and my improve_sqlite3gen branch to generate doxygen_docs2/.
+This is a lightly-edited terminal log of an informal before/after test I did on Adrian's doxypysql.py client. I'll start with an overview of the procedure:
+
+1. Use Doxygen's master branch to generate `doxygen_docs/` from the source of my sql3 branch.
+2. Use my sql3 branch to generate `doxygen_docs2/` from the source of my sql3 branch.
+3. Run scripts with commands that exercise most of search.py's flags and capture the output of each.
+4. Manually examine/evaluate what has shifted and how.
+
+Here's the "before" script.
 
 ```ShellSession
 [nix-shell:~/work/doxygen]$ cat doxypysql_before.sh
@@ -18,9 +25,11 @@ python addon/doxypysql/search.py -d doxygen_docs/doxygen_sqlite3.db -i /Users/ab
 python addon/doxypysql/search.py -d doxygen_docs/doxygen_sqlite3.db -I /Users/abathur/work/doxygen/src/dirdef.h > dpy_before/14.json
 ```
 
-Then, I ran the above using the old doxypysql.py (lightly patched for python3) from the master branch. I also ran a roughly-identical script to populate dpy_after using my improve_sqlite3gen branch.
+I ran the above using the old doxypysql/search.py (lightly patched for python3) from the master branch. If you want to inspect the output for yourself, it's in https://github.com/abathur/doxygen/tree/dpysql/dpy_before
 
-The record return order isn't deterministic, so I sort the output on each side before comparing.
+I also ran a roughly-identical script to populate `dpy_after` using the updated client and database. You can likewise inspect its output directly in https://github.com/abathur/doxygen/tree/dpysql/dpy_afte
+
+The client's record return order isn't deterministic, so I had to sort the output on each side before comparing.
 
 ```ShellSession
 [nix-shell:~/work/doxygen]$ cmp <(sort dpy_before/1.json) <(sort dpy_after/1.json)
@@ -54,7 +63,7 @@ The record return order isn't deterministic, so I sort the output on each side b
 [nix-shell:~/work/doxygen]$ cmp <(sort dpy_before/14.json) <(sort dpy_after/14.json)
 ```
 
-Ah! 11 & 13 differ. Let's see how badly. I'll cheat and do the easy one first:
+11 & 13 differ. Let's see how badly. I'll do the easy one first:
 
 ```ShellSession
 [nix-shell:~/work/doxygen]$ diff <(sort dpy_before/13.json) <(sort dpy_after/13.json)
@@ -68,7 +77,7 @@ Ah! 11 & 13 differ. Let's see how badly. I'll cheat and do the easy one first:
 >         "name": "src/sortdict.h"
 ```
 
-Ok. They differ, but 'after' has better path information.
+They differ, but `after` has better path information.
 
 ```ShellSession
 [nix-shell:~/work/doxygen]$ diff <(sort dpy_before/11.json) <(sort dpy_after/11.json)
@@ -91,9 +100,10 @@ Ok. They differ, but 'after' has better path information.
 <         "name": "/Users/abathur/work/doxygen/src/cmdmapper.cpp",
 <         "name": "/Users/abathur/work/doxygen/src/cmdmapper.h",
 <         "name": "/Users/abathur/work/doxygen/src/code.h",
+...
 ```
 
-Ok. Looks like the before file has many more IDs, and it has unstripped paths. Of course! I'll trim those...
+Ok. Looks like the `before` file has many more IDs, and it has unstripped paths. Of course! I'll trim those...
 
 ```ShellSession
 [nix-shell:~/work/doxygen]$ sed -e 's/\/Users\/abathur\/work\/doxygen\///' dpy_before/11.json > dpy_before/11_strip_prefix.json
@@ -147,9 +157,9 @@ Ok. Looks like the before file has many more IDs, and it has unstripped paths. O
     ...                                                             ...
 ```
 
-Even after stripping path prefixes, files still differ because previous version was recording no-file for some things, and duplicate file entries, at least for header files.
+Even after stripping path prefixes, files still differ because the un-updated generator records `no-file` for some things and creates duplicate file entries for header files.
 
-I'll use sort|uniq to filter out the JSON furniture to see what still differs
+Since the records won't align or have the same quantity, I'll use `sort|uniq` to filter out the JSON furniture to help highlight what still differs.
 
 ```ShellSession
 [nix-shell:~/work/doxygen]$ diff <(sort dpy_before/11_strip_prefix.json|uniq) <(sort dpy_after/11.json|uniq)
@@ -417,9 +427,7 @@ I'll use sort|uniq to filter out the JSON furniture to see what still differs
 <         "name": "xmlscanner.h",
 ```
 
-The actual surface area of difference is pretty small:
-- We saw that 'before' had duplicate entries for .h files with and without a directory. Since the src/*.h copies don't show up here, we know the 'after' copy has all of these.
-Otherwise, the 'after' copy has two small improvements:
+This diff shows that the `after` output has a few modest improvements:
+- We saw that `before` had duplicate entries for .h files with and without a directory. Since the src/*.h copies don't show up here, we know the `after` copy has all of these. Since the *.h copies do, we know that the `after` side lacks the duplicates.
 - includes src/doxygen.md (because PageDef is now collected)
-- includes src/qtbc.h (because DirDef is now collected)
-  (Doxgygen otherwise skips include in sqlite3gen because the Doxyfile doesn't predefine USE_SQLITE3)
+- includes src/qtbc.h (because DirDef is now collected; Doxygen doesn't otherwise encounter qtbc because the Doxyfile doesn't predefine USE_SQLITE3)
