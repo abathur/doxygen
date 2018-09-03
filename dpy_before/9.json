@@ -1,0 +1,20 @@
+[
+    {
+        "name": "m_impl",
+        "definition": "ClassDefImpl* ClassDef::m_impl",
+        "file": "src/classdef.h",
+        "line": 459
+    },
+    {
+        "name": "m_impl",
+        "definition": "DefinitionImpl* Definition::m_impl",
+        "file": "src/definition.h",
+        "line": 374
+    },
+    {
+        "name": "m_impl",
+        "definition": "MemberDefImpl* MemberDef::m_impl",
+        "file": "src/memberdef.h",
+        "line": 441
+    }
+]

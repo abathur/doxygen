@@ -1,0 +1,18 @@
+[
+    {
+        "name": "generateSqlite3",
+        "definition": "void generateSqlite3",
+        "argsstring": "()",
+        "file": "src/sqlite3gen.cpp",
+        "line": 2604,
+        "detaileddescription": null
+    },
+    {
+        "name": "generateSqlite3",
+        "definition": "void generateSqlite3",
+        "argsstring": "()",
+        "file": "src/sqlite3gen.h",
+        "line": 21,
+        "detaileddescription": null
+    }
+]

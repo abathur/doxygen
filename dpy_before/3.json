@@ -1,0 +1,723 @@
+[
+    {
+        "name": "m_impl",
+        "definition": "DefinitionImpl* Definition::m_impl",
+        "argsstring": null,
+        "file": "src/definition.h",
+        "line": 374
+    },
+    {
+        "name": "m_name",
+        "definition": "QCString Definition::m_name",
+        "argsstring": null,
+        "file": "src/definition.h",
+        "line": 375
+    },
+    {
+        "name": "m_isSymbol",
+        "definition": "bool Definition::m_isSymbol",
+        "argsstring": null,
+        "file": "src/definition.h",
+        "line": 376
+    },
+    {
+        "name": "m_symbolName",
+        "definition": "QCString Definition::m_symbolName",
+        "argsstring": null,
+        "file": "src/definition.h",
+        "line": 377
+    },
+    {
+        "name": "m_defLine",
+        "definition": "int Definition::m_defLine",
+        "argsstring": null,
+        "file": "src/definition.h",
+        "line": 378
+    },
+    {
+        "name": "m_defColumn",
+        "definition": "int Definition::m_defColumn",
+        "argsstring": null,
+        "file": "src/definition.h",
+        "line": 379
+    },
+    {
+        "name": "m_cookie",
+        "definition": "Cookie* Definition::m_cookie",
+        "argsstring": null,
+        "file": "src/definition.h",
+        "line": 380
+    },
+    {
+        "name": "Definition",
+        "definition": "Definition::Definition",
+        "argsstring": "(const char *defFileName, int defLine, int defColumn, const char *name, const char *b=0, const char *d=0, bool isSymbol=TRUE)",
+        "file": "src/definition.h",
+        "line": 101
+    },
+    {
+        "name": "~Definition",
+        "definition": "Definition::~Definition",
+        "argsstring": "()",
+        "file": "src/definition.h",
+        "line": 107
+    },
+    {
+        "name": "name",
+        "definition": "const QCString& Definition::name",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 114
+    },
+    {
+        "name": "displayName",
+        "definition": "virtual QCString Definition::displayName",
+        "argsstring": "(bool includeScope=TRUE) const =0",
+        "file": "src/definition.h",
+        "line": 117
+    },
+    {
+        "name": "localName",
+        "definition": "QCString Definition::localName",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 120
+    },
+    {
+        "name": "qualifiedName",
+        "definition": "QCString Definition::qualifiedName",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 124
+    },
+    {
+        "name": "symbolName",
+        "definition": "QCString Definition::symbolName",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 128
+    },
+    {
+        "name": "getOutputFileBase",
+        "definition": "virtual QCString Definition::getOutputFileBase",
+        "argsstring": "() const =0",
+        "file": "src/definition.h",
+        "line": 133
+    },
+    {
+        "name": "anchor",
+        "definition": "virtual QCString Definition::anchor",
+        "argsstring": "() const =0",
+        "file": "src/definition.h",
+        "line": 136
+    },
+    {
+        "name": "getSourceFileBase",
+        "definition": "QCString Definition::getSourceFileBase",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 139
+    },
+    {
+        "name": "getSourceAnchor",
+        "definition": "QCString Definition::getSourceAnchor",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 142
+    },
+    {
+        "name": "documentation",
+        "definition": "QCString Definition::documentation",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 145
+    },
+    {
+        "name": "docLine",
+        "definition": "int Definition::docLine",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 148
+    },
+    {
+        "name": "docFile",
+        "definition": "QCString Definition::docFile",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 153
+    },
+    {
+        "name": "briefDescription",
+        "definition": "QCString Definition::briefDescription",
+        "argsstring": "(bool abbreviate=FALSE) const",
+        "file": "src/definition.h",
+        "line": 156
+    },
+    {
+        "name": "briefDescriptionAsTooltip",
+        "definition": "QCString Definition::briefDescriptionAsTooltip",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 161
+    },
+    {
+        "name": "briefLine",
+        "definition": "int Definition::briefLine",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 164
+    },
+    {
+        "name": "inbodyDocumentation",
+        "definition": "QCString Definition::inbodyDocumentation",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 167
+    },
+    {
+        "name": "inbodyFile",
+        "definition": "QCString Definition::inbodyFile",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 170
+    },
+    {
+        "name": "inbodyLine",
+        "definition": "int Definition::inbodyLine",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 174
+    },
+    {
+        "name": "briefFile",
+        "definition": "QCString Definition::briefFile",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 179
+    },
+    {
+        "name": "getDefFileName",
+        "definition": "QCString Definition::getDefFileName",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 182
+    },
+    {
+        "name": "getDefFileExtension",
+        "definition": "QCString Definition::getDefFileExtension",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 185
+    },
+    {
+        "name": "getDefLine",
+        "definition": "int Definition::getDefLine",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 188
+    },
+    {
+        "name": "getDefColumn",
+        "definition": "int Definition::getDefColumn",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 191
+    },
+    {
+        "name": "hasDocumentation",
+        "definition": "bool Definition::hasDocumentation",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 197
+    },
+    {
+        "name": "hasUserDocumentation",
+        "definition": "bool Definition::hasUserDocumentation",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 200
+    },
+    {
+        "name": "isLinkableInProject",
+        "definition": "virtual bool Definition::isLinkableInProject",
+        "argsstring": "() const =0",
+        "file": "src/definition.h",
+        "line": 205
+    },
+    {
+        "name": "isLinkable",
+        "definition": "virtual bool Definition::isLinkable",
+        "argsstring": "() const =0",
+        "file": "src/definition.h",
+        "line": 210
+    },
+    {
+        "name": "isVisibleInProject",
+        "definition": "bool Definition::isVisibleInProject",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 215
+    },
+    {
+        "name": "isVisible",
+        "definition": "bool Definition::isVisible",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 218
+    },
+    {
+        "name": "isHidden",
+        "definition": "bool Definition::isHidden",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 221
+    },
+    {
+        "name": "isArtificial",
+        "definition": "bool Definition::isArtificial",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 226
+    },
+    {
+        "name": "getReference",
+        "definition": "QCString Definition::getReference",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 233
+    },
+    {
+        "name": "isReference",
+        "definition": "bool Definition::isReference",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 236
+    },
+    {
+        "name": "externalReference",
+        "definition": "QCString Definition::externalReference",
+        "argsstring": "(const QCString &relPath) const",
+        "file": "src/definition.h",
+        "line": 239
+    },
+    {
+        "name": "getStartBodyLine",
+        "definition": "int Definition::getStartBodyLine",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 244
+    },
+    {
+        "name": "getEndBodyLine",
+        "definition": "int Definition::getEndBodyLine",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 249
+    },
+    {
+        "name": "getBodyDef",
+        "definition": "FileDef * Definition::getBodyDef",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 254
+    },
+    {
+        "name": "getLanguage",
+        "definition": "SrcLangExt Definition::getLanguage",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 257
+    },
+    {
+        "name": "partOfGroups",
+        "definition": "GroupList * Definition::partOfGroups",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 259
+    },
+    {
+        "name": "isLinkableViaGroup",
+        "definition": "bool Definition::isLinkableViaGroup",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 260
+    },
+    {
+        "name": "xrefListItems",
+        "definition": "QList< ListItemInfo > * Definition::xrefListItems",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 262
+    },
+    {
+        "name": "findInnerCompound",
+        "definition": "Definition * Definition::findInnerCompound",
+        "argsstring": "(const char *name) const",
+        "file": "src/definition.h",
+        "line": 264
+    },
+    {
+        "name": "getOuterScope",
+        "definition": "Definition * Definition::getOuterScope",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 265
+    },
+    {
+        "name": "getReferencesMembers",
+        "definition": "MemberSDict * Definition::getReferencesMembers",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 267
+    },
+    {
+        "name": "getReferencedByMembers",
+        "definition": "MemberSDict * Definition::getReferencedByMembers",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 268
+    },
+    {
+        "name": "hasSections",
+        "definition": "bool Definition::hasSections",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 270
+    },
+    {
+        "name": "hasSources",
+        "definition": "bool Definition::hasSources",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 271
+    },
+    {
+        "name": "hasBriefDescription",
+        "definition": "bool Definition::hasBriefDescription",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 274
+    },
+    {
+        "name": "id",
+        "definition": "QCString Definition::id",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 276
+    },
+    {
+        "name": "getSectionDict",
+        "definition": "SectionDict * Definition::getSectionDict",
+        "argsstring": "(void)",
+        "file": "src/definition.h",
+        "line": 279
+    },
+    {
+        "name": "setName",
+        "definition": "void Definition::setName",
+        "argsstring": "(const char *name)",
+        "file": "src/definition.h",
+        "line": 286
+    },
+    {
+        "name": "setId",
+        "definition": "void Definition::setId",
+        "argsstring": "(const char *name)",
+        "file": "src/definition.h",
+        "line": 289
+    },
+    {
+        "name": "setDocumentation",
+        "definition": "void Definition::setDocumentation",
+        "argsstring": "(const char *d, const char *docFile, int docLine, bool stripWhiteSpace=TRUE)",
+        "file": "src/definition.h",
+        "line": 292
+    },
+    {
+        "name": "setBriefDescription",
+        "definition": "void Definition::setBriefDescription",
+        "argsstring": "(const char *b, const char *briefFile, int briefLine)",
+        "file": "src/definition.h",
+        "line": 297
+    },
+    {
+        "name": "setInbodyDocumentation",
+        "definition": "void Definition::setInbodyDocumentation",
+        "argsstring": "(const char *d, const char *docFile, int docLine)",
+        "file": "src/definition.h",
+        "line": 303
+    },
+    {
+        "name": "setReference",
+        "definition": "void Definition::setReference",
+        "argsstring": "(const char *r)",
+        "file": "src/definition.h",
+        "line": 306
+    },
+    {
+        "name": "addSectionsToDefinition",
+        "definition": "void Definition::addSectionsToDefinition",
+        "argsstring": "(QList< SectionInfo > *anchorList)",
+        "file": "src/definition.h",
+        "line": 311
+    },
+    {
+        "name": "setBodySegment",
+        "definition": "void Definition::setBodySegment",
+        "argsstring": "(int bls, int ble)",
+        "file": "src/definition.h",
+        "line": 314
+    },
+    {
+        "name": "setBodyDef",
+        "definition": "void Definition::setBodyDef",
+        "argsstring": "(FileDef *fd)",
+        "file": "src/definition.h",
+        "line": 315
+    },
+    {
+        "name": "addSourceReferencedBy",
+        "definition": "void Definition::addSourceReferencedBy",
+        "argsstring": "(MemberDef *d)",
+        "file": "src/definition.h",
+        "line": 316
+    },
+    {
+        "name": "addSourceReferences",
+        "definition": "void Definition::addSourceReferences",
+        "argsstring": "(MemberDef *d)",
+        "file": "src/definition.h",
+        "line": 317
+    },
+    {
+        "name": "setRefItems",
+        "definition": "void Definition::setRefItems",
+        "argsstring": "(const QList< ListItemInfo > *sli)",
+        "file": "src/definition.h",
+        "line": 319
+    },
+    {
+        "name": "mergeRefItems",
+        "definition": "void Definition::mergeRefItems",
+        "argsstring": "(Definition *d)",
+        "file": "src/definition.h",
+        "line": 320
+    },
+    {
+        "name": "addInnerCompound",
+        "definition": "void Definition::addInnerCompound",
+        "argsstring": "(Definition *d)",
+        "file": "src/definition.h",
+        "line": 321
+    },
+    {
+        "name": "setOuterScope",
+        "definition": "void Definition::setOuterScope",
+        "argsstring": "(Definition *d)",
+        "file": "src/definition.h",
+        "line": 322
+    },
+    {
+        "name": "setHidden",
+        "definition": "void Definition::setHidden",
+        "argsstring": "(bool b)",
+        "file": "src/definition.h",
+        "line": 324
+    },
+    {
+        "name": "setArtificial",
+        "definition": "void Definition::setArtificial",
+        "argsstring": "(bool b)",
+        "file": "src/definition.h",
+        "line": 326
+    },
+    {
+        "name": "setLanguage",
+        "definition": "void Definition::setLanguage",
+        "argsstring": "(SrcLangExt lang)",
+        "file": "src/definition.h",
+        "line": 327
+    },
+    {
+        "name": "writeSourceDef",
+        "definition": "void Definition::writeSourceDef",
+        "argsstring": "(OutputList &ol, const char *scopeName)",
+        "file": "src/definition.h",
+        "line": 333
+    },
+    {
+        "name": "writeInlineCode",
+        "definition": "void Definition::writeInlineCode",
+        "argsstring": "(OutputList &ol, const char *scopeName)",
+        "file": "src/definition.h",
+        "line": 334
+    },
+    {
+        "name": "writeSourceRefs",
+        "definition": "void Definition::writeSourceRefs",
+        "argsstring": "(OutputList &ol, const char *scopeName)",
+        "file": "src/definition.h",
+        "line": 335
+    },
+    {
+        "name": "writeSourceReffedBy",
+        "definition": "void Definition::writeSourceReffedBy",
+        "argsstring": "(OutputList &ol, const char *scopeName)",
+        "file": "src/definition.h",
+        "line": 336
+    },
+    {
+        "name": "makePartOfGroup",
+        "definition": "void Definition::makePartOfGroup",
+        "argsstring": "(GroupDef *gd)",
+        "file": "src/definition.h",
+        "line": 337
+    },
+    {
+        "name": "writeNavigationPath",
+        "definition": "void Definition::writeNavigationPath",
+        "argsstring": "(OutputList &ol) const",
+        "file": "src/definition.h",
+        "line": 339
+    },
+    {
+        "name": "navigationPathAsString",
+        "definition": "QCString Definition::navigationPathAsString",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 340
+    },
+    {
+        "name": "writeQuickMemberLinks",
+        "definition": "virtual void Definition::writeQuickMemberLinks",
+        "argsstring": "(OutputList &, MemberDef *) const",
+        "file": "src/definition.h",
+        "line": 341
+    },
+    {
+        "name": "writeSummaryLinks",
+        "definition": "virtual void Definition::writeSummaryLinks",
+        "argsstring": "(OutputList &)",
+        "file": "src/definition.h",
+        "line": 342
+    },
+    {
+        "name": "pathFragment",
+        "definition": "QCString Definition::pathFragment",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 343
+    },
+    {
+        "name": "writeDocAnchorsToTagFile",
+        "definition": "void Definition::writeDocAnchorsToTagFile",
+        "argsstring": "(FTextStream &)",
+        "file": "src/definition.h",
+        "line": 348
+    },
+    {
+        "name": "setLocalName",
+        "definition": "void Definition::setLocalName",
+        "argsstring": "(const QCString name)",
+        "file": "src/definition.h",
+        "line": 349
+    },
+    {
+        "name": "addSectionsToIndex",
+        "definition": "void Definition::addSectionsToIndex",
+        "argsstring": "()",
+        "file": "src/definition.h",
+        "line": 351
+    },
+    {
+        "name": "writeToc",
+        "definition": "void Definition::writeToc",
+        "argsstring": "(OutputList &ol, const LocalToc &lt)",
+        "file": "src/definition.h",
+        "line": 352
+    },
+    {
+        "name": "setCookie",
+        "definition": "void Definition::setCookie",
+        "argsstring": "(Cookie *cookie)",
+        "file": "src/definition.h",
+        "line": 354
+    },
+    {
+        "name": "cookie",
+        "definition": "Cookie* Definition::cookie",
+        "argsstring": "() const",
+        "file": "src/definition.h",
+        "line": 355
+    },
+    {
+        "name": "Definition",
+        "definition": "Definition::Definition",
+        "argsstring": "(const Definition &d)",
+        "file": "src/definition.h",
+        "line": 359
+    },
+    {
+        "name": "addToMap",
+        "definition": "void Definition::addToMap",
+        "argsstring": "(const char *name, Definition *d)",
+        "file": "src/definition.h",
+        "line": 362
+    },
+    {
+        "name": "removeFromMap",
+        "definition": "void Definition::removeFromMap",
+        "argsstring": "(Definition *d)",
+        "file": "src/definition.h",
+        "line": 363
+    },
+    {
+        "name": "_setSymbolName",
+        "definition": "void Definition::_setSymbolName",
+        "argsstring": "(const QCString &name)",
+        "file": "src/definition.h",
+        "line": 365
+    },
+    {
+        "name": "_getXRefListId",
+        "definition": "int Definition::_getXRefListId",
+        "argsstring": "(const char *listName) const",
+        "file": "src/definition.h",
+        "line": 367
+    },
+    {
+        "name": "_writeSourceRefList",
+        "definition": "void Definition::_writeSourceRefList",
+        "argsstring": "(OutputList &ol, const char *scopeName, const QCString &text, MemberSDict *members, bool)",
+        "file": "src/definition.h",
+        "line": 368
+    },
+    {
+        "name": "_setBriefDescription",
+        "definition": "void Definition::_setBriefDescription",
+        "argsstring": "(const char *b, const char *briefFile, int briefLine)",
+        "file": "src/definition.h",
+        "line": 370
+    },
+    {
+        "name": "_setDocumentation",
+        "definition": "void Definition::_setDocumentation",
+        "argsstring": "(const char *d, const char *docFile, int docLine, bool stripWhiteSpace, bool atTop)",
+        "file": "src/definition.h",
+        "line": 371
+    },
+    {
+        "name": "_setInbodyDocumentation",
+        "definition": "void Definition::_setInbodyDocumentation",
+        "argsstring": "(const char *d, const char *docFile, int docLine)",
+        "file": "src/definition.h",
+        "line": 372
+    },
+    {
+        "name": "_docsAlreadyAdded",
+        "definition": "bool Definition::_docsAlreadyAdded",
+        "argsstring": "(const QCString &doc, QCString &sigList)",
+        "file": "src/definition.h",
+        "line": 373
+    }
+]

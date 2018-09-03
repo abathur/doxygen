@@ -1,0 +1,18 @@
+[
+    {
+        "name": "generateXML",
+        "definition": "void generateXML",
+        "argsstring": "()",
+        "file": "src/xmlgen.h",
+        "line": 60,
+        "detaileddescription": null
+    },
+    {
+        "name": "generateXML",
+        "definition": "void generateXML",
+        "argsstring": "()",
+        "file": "src/xmlgen.cpp",
+        "line": 1891,
+        "detaileddescription": null
+    }
+]

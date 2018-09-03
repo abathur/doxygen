@@ -1,0 +1,23 @@
+[
+    {
+        "name": "ClassDef"
+    },
+    {
+        "name": "DirDef"
+    },
+    {
+        "name": "FileDef"
+    },
+    {
+        "name": "GroupDef"
+    },
+    {
+        "name": "MemberDef"
+    },
+    {
+        "name": "NamespaceDef"
+    },
+    {
+        "name": "PageDef"
+    }
+]

@@ -1,0 +1,272 @@
+[
+    {
+        "name": "StubType",
+        "definition": "typedef TemplateVariant(* TemplateVariant::Delegate::StubType) (const void *obj, const QValueList< TemplateVariant > &args)",
+        "file": "src/template.h",
+        "line": 98
+    },
+    {
+        "name": "PerlSymb",
+        "definition": "typedef struct DocSymbol::PerlSymb DocSymbol::PerlSymb",
+        "file": "src/docparser.h",
+        "line": 464
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef void(LayoutParser::* LayoutParser::EndElementHandler::Handler) ()",
+        "file": "src/layout.cpp",
+        "line": 242
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef void(TagFileParser::* TagFileParser::EndElementHandler::Handler) ()",
+        "file": "src/tagreader.cpp",
+        "line": 238
+    },
+    {
+        "name": "RowSpanList",
+        "definition": "typedef QList<ActiveRowSpan> LatexDocVisitor::RowSpanList",
+        "file": "src/latexdocvisitor.h",
+        "line": 153
+    },
+    {
+        "name": "ElementType",
+        "definition": "typedef MemberDef MemberIndexList::ElementType",
+        "file": "src/index.cpp",
+        "line": 122
+    },
+    {
+        "name": "ElementType",
+        "definition": "typedef ClassDef PrefixIgnoreClassList::ElementType",
+        "file": "src/index.cpp",
+        "line": 1694
+    },
+    {
+        "name": "MemberFunc",
+        "definition": "typedef bool(MemberDef::* ClassMembersIndexContext::Private::MemberFunc) () const",
+        "file": "src/context.cpp",
+        "line": 8029
+    },
+    {
+        "name": "MemberFunc",
+        "definition": "typedef bool(MemberDef::* NamespaceMembersIndexContext::Private::MemberFunc) () const",
+        "file": "src/context.cpp",
+        "line": 8188
+    },
+    {
+        "name": "MemberFunc",
+        "definition": "typedef bool(MemberDef::* GlobalsIndexContext::Private::MemberFunc) () const",
+        "file": "src/context.cpp",
+        "line": 7872
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef TemplateVariant(T::* PropertyMapper< T >::PropertyFunc::Handler) () const",
+        "file": "src/context.cpp",
+        "line": 235
+    },
+    {
+        "name": "Type",
+        "definition": "typedef T ScopedPtr< T >::Type",
+        "file": "src/context.cpp",
+        "line": 85
+    },
+    {
+        "name": "ElementType",
+        "definition": "typedef Definition SearchIndexList::ElementType",
+        "file": "src/searchindex.h",
+        "line": 146
+    },
+    {
+        "name": "Type",
+        "definition": "typedef T SharedPtr< T >::Type",
+        "file": "src/context.cpp",
+        "line": 106
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef void(TagFileParser::* TagFileParser::StartElementHandler::Handler) (const QXmlAttributes &attrib)",
+        "file": "src/tagreader.cpp",
+        "line": 227
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef void(LayoutParser::* LayoutParser::StartElementHandler::Handler) (const QXmlAttributes &attrib)",
+        "file": "src/layout.cpp",
+        "line": 137
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef void(LayoutParser::* LayoutParser::StartElementHandlerKind::Handler) (LayoutDocEntry::Kind kind, const QXmlAttributes &attrib)",
+        "file": "src/layout.cpp",
+        "line": 155
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef void(LayoutParser::* LayoutParser::StartElementHandlerMember::Handler) (const QXmlAttributes &attrib, MemberListType type, const QCString &title, const QCString &subtitle)",
+        "file": "src/layout.cpp",
+        "line": 192
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef void(LayoutParser::* LayoutParser::StartElementHandlerNavEntry::Handler) (LayoutNavEntry::Kind kind, const QXmlAttributes &attrib, const QCString &title)",
+        "file": "src/layout.cpp",
+        "line": 219
+    },
+    {
+        "name": "Handler",
+        "definition": "typedef void(LayoutParser::* LayoutParser::StartElementHandlerSection::Handler) (LayoutDocEntry::Kind kind, const QXmlAttributes &attrib, const QCString &title)",
+        "file": "src/layout.cpp",
+        "line": 172
+    },
+    {
+        "name": "FilterFunction",
+        "definition": "typedef TemplateVariant() TemplateFilterFactory::FilterFunction(const TemplateVariant &v, const TemplateVariant &arg)",
+        "file": "src/template.cpp",
+        "line": 1360
+    },
+    {
+        "name": "CreateFunc",
+        "definition": "typedef TemplateNode*(* TemplateNodeFactory::CreateFunc) (TemplateParser *parser, TemplateNode *parent, int line, const QCString &data)",
+        "file": "src/template.cpp",
+        "line": 4493
+    },
+    {
+        "name": "uint64",
+        "definition": "typedef unsigned long long vhdl::parser::VhdlParser::uint64",
+        "file": "vhdlparser/VhdlParser.h",
+        "line": 8930
+    },
+    {
+        "name": "ArgumentListIterator",
+        "definition": "typedef QListIterator<Argument> ArgumentListIterator",
+        "file": "src/arguments.h",
+        "line": 123
+    },
+    {
+        "name": "DefineDict",
+        "definition": "typedef QDict<Define> DefineDict",
+        "file": "src/define.h",
+        "line": 94
+    },
+    {
+        "name": "DefineNameDict",
+        "definition": "typedef QDict<DefineName> DefineNameDict",
+        "file": "src/define.h",
+        "line": 97
+    },
+    {
+        "name": "RowSpanList",
+        "definition": "typedef QList<ActiveRowSpan> RowSpanList",
+        "file": "src/docparser.cpp",
+        "line": 3807
+    },
+    {
+        "name": "StringList",
+        "definition": "typedef QList<QCString> StringList",
+        "file": "src/doxygen.h",
+        "line": 64
+    },
+    {
+        "name": "StringListIterator",
+        "definition": "typedef QListIterator<QCString> StringListIterator",
+        "file": "src/doxygen.h",
+        "line": 65
+    },
+    {
+        "name": "EntryList",
+        "definition": "typedef QList<Entry> EntryList",
+        "file": "src/entry.h",
+        "line": 378
+    },
+    {
+        "name": "EntryListIterator",
+        "definition": "typedef QListIterator<Entry> EntryListIterator",
+        "file": "src/entry.h",
+        "line": 379
+    },
+    {
+        "name": "EntryNavList",
+        "definition": "typedef QList<EntryNav> EntryNavList",
+        "file": "src/entry.h",
+        "line": 381
+    },
+    {
+        "name": "EntryNavListIterator",
+        "definition": "typedef QListIterator<EntryNav> EntryNavListIterator",
+        "file": "src/entry.h",
+        "line": 382
+    },
+    {
+        "name": "FTSFUNC",
+        "definition": "typedef FTextStream&(* FTSFUNC) (FTextStream &)",
+        "file": "src/ftextstream.h",
+        "line": 72
+    },
+    {
+        "name": "Byte",
+        "definition": "typedef unsigned char Byte",
+        "file": "src/image.cpp",
+        "line": 25
+    },
+    {
+        "name": "LodeZlib_DeflateSettings",
+        "definition": "typedef struct LodeZlib_DeflateSettings  LodeZlib_DeflateSettings",
+        "file": "src/lodepng.h",
+        "line": 46
+    },
+    {
+        "name": "LodePNG_InfoColor",
+        "definition": "typedef struct LodePNG_InfoColor  LodePNG_InfoColor",
+        "file": "src/lodepng.h",
+        "line": 68
+    },
+    {
+        "name": "LodePNG_InfoPng",
+        "definition": "typedef struct LodePNG_InfoPng  LodePNG_InfoPng",
+        "file": "src/lodepng.h",
+        "line": 79
+    },
+    {
+        "name": "LodePNG_InfoRaw",
+        "definition": "typedef struct LodePNG_InfoRaw  LodePNG_InfoRaw",
+        "file": "src/lodepng.h",
+        "line": 84
+    },
+    {
+        "name": "LodePNG_EncodeSettings",
+        "definition": "typedef struct LodePNG_EncodeSettings  LodePNG_EncodeSettings",
+        "file": "src/lodepng.h",
+        "line": 94
+    },
+    {
+        "name": "LodePNG_Encoder",
+        "definition": "typedef struct LodePNG_Encoder  LodePNG_Encoder",
+        "file": "src/lodepng.h",
+        "line": 104
+    },
+    {
+        "name": "action_t",
+        "definition": "typedef int(* action_t) (GrowBuf &out, const char *data, int offset, int size)",
+        "file": "src/markdown.cpp",
+        "line": 98
+    },
+    {
+        "name": "portable_off_t",
+        "definition": "typedef off_t portable_off_t",
+        "file": "src/portable.h",
+        "line": 11
+    },
+    {
+        "name": "StringBuffer",
+        "definition": "typedef JAVACC_STRING_TYPE StringBuffer",
+        "file": "vhdlparser/JavaCC.h",
+        "line": 21
+    },
+    {
+        "name": "String",
+        "definition": "typedef JAVACC_STRING_TYPE String",
+        "file": "vhdlparser/JavaCC.h",
+        "line": 22
+    }
+]

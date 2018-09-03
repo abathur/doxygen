@@ -1,0 +1,8 @@
+[
+    {
+        "name": "COMPILE_FOR_4_OPTIONS",
+        "definition": "COMPILE_FOR_3_OPTIONS(def,langId1,text1,langId2,text2,langId3,text3)+ADD_OPTION(langId4,text4)",
+        "file": "src/layout.cpp",
+        "line": 50
+    }
+]

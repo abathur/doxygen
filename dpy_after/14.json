@@ -1,0 +1,47 @@
+[
+    {
+        "name": "src/context.cpp"
+    },
+    {
+        "name": "src/definition.cpp"
+    },
+    {
+        "name": "src/dirdef.cpp"
+    },
+    {
+        "name": "src/doxygen.h"
+    },
+    {
+        "name": "src/docbookgen.cpp"
+    },
+    {
+        "name": "src/dot.cpp"
+    },
+    {
+        "name": "src/doxygen.cpp"
+    },
+    {
+        "name": "src/filedef.cpp"
+    },
+    {
+        "name": "src/groupdef.cpp"
+    },
+    {
+        "name": "src/htmlgen.cpp"
+    },
+    {
+        "name": "src/index.cpp"
+    },
+    {
+        "name": "src/latexgen.cpp"
+    },
+    {
+        "name": "src/rtfgen.cpp"
+    },
+    {
+        "name": "src/util.cpp"
+    },
+    {
+        "name": "src/xmlgen.cpp"
+    }
+]
