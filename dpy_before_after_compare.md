@@ -27,7 +27,7 @@ python addon/doxypysql/search.py -d doxygen_docs/doxygen_sqlite3.db -I /Users/ab
 
 I ran the above using the old doxypysql/search.py (lightly patched for python3) from the master branch. If you want to inspect the output for yourself, it's in https://github.com/abathur/doxygen/tree/dpysql/dpy_before
 
-I also ran a roughly-identical script to populate `dpy_after` using the updated client and database. You can likewise inspect its output directly in https://github.com/abathur/doxygen/tree/dpysql/dpy_afte
+I also ran a roughly-identical script to populate `dpy_after` using the updated client and database. You can likewise inspect its output directly in https://github.com/abathur/doxygen/tree/dpysql/dpy_after
 
 The client's record return order isn't deterministic, so I had to sort the output on each side before comparing.
 
