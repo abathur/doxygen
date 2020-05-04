@@ -9,6 +9,7 @@ pkgs.doxygen.overrideAttrs (attrs: {
   ] ++ attrs.cmakeFlags;
 
   doCheck = true;
+  checkInputs = [ pkgs.time ];
   checkPhase = ''
     # rm outputs; not necessary with nix-build but useful with nix-shell
     rm -rf xml html latex doxygen_sqlite3.db
@@ -20,7 +21,7 @@ pkgs.doxygen.overrideAttrs (attrs: {
     DOXYGEN_ROOT=$(pwd)
 
     # make the examples
-    build/bin/doxygen examples.conf
+    command time --verbose build/bin/doxygen examples.conf
 
     # show the XML
     head -n -0 xml/index.xml xml/group__group5_*.xml
